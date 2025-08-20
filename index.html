@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <!-- ===========================================================
+       INDEX.HTML — Ultra-Profesyonel, Performans Odaklı, A11y Uyumlu
+       ===========================================================
+       * Dark theme by default (Google Photos vibe)
+       * Responsive Masonry-like grid (CSS Grid + JS auto-row span)
+       * Lazy loading (img loading="lazy", IO for videos)
+       * Keyboard + touch (swipe) navigation
+       * Hash routing (#/media/:index) → tarayıcının geri/ileri tuşu çalışır
+       * No external poster images: video thumbnails generated from first frame
+       * CLS azaltımı: known width/height + aspect-ratio + container size hints
+  -->
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0f14" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="description" content="Google Fotoğraflar benzeri, responsive, dark temalı, fullscreen lightbox ve otomatik video kapaklı profesyonel galeri." />
+  <meta name="keywords" content="galeri, fotoğraf, video, responsive, fullscreen, lightbox, dark mode, masonry, lazy loading" />
+  <meta name="author" content="Higer Yazılım" />
+
+  <title>Profesyonel Foto & Video Galeri</title>
+
+  <!-- Preconnect / DNS Prefetch (harici kaynağımız yok; geleceğe dönük) -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="dns-prefetch" href="//fonts.gstatic.com" />
+  <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+
+  <!-- Sistem fontlarıyla hızlı ilk boyama (FOIT/FOUC yok) -->
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preload" href="script.js" as="script" />
+
+  <!-- Favicon (opsiyonel) -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Ctext y='52' x='4' font-size='56'%3E📷%3C/text%3E%3C/svg%3E">
+
+  <!-- Open Graph / Twitter -->
+  <meta property="og:title" content="Profesyonel Foto & Video Galeri" />
+  <meta property="og:description" content="Google Fotoğraflar benzeri; responsive, dark-tema, fullscreen, swipe, klavye, lazy, video kapak otomatik." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="images/f1.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- No blocking scripts in <head> (performance) -->
+</head>
+<body class="theme-dark">
+  <!-- ===========================================================
+       Top Bar (sticky) — minimalist
+       =========================================================== -->
+  <header class="topbar" role="banner">
+    <div class="topbar__inner">
+      <h1 class="brand" aria-label="Galeri Anasayfa">
+        <span class="brand__emoji" aria-hidden="true">📷</span>
+        <span class="brand__text">Galeri</span>
+      </h1>
+
+      <nav class="topbar__nav" aria-label="Kısa Eylemler">
+        <button id="btnTheme" class="btn ghost" aria-pressed="true" aria-label="Temayı değiştir (Karanlık/Aydınlık)">
+          <span class="only-desktop">Karanlık</span>
+          <span class="only-mobile">🌓</span>
+        </button>
+        <button id="btnAbout" class="btn ghost" aria-haspopup="dialog" aria-controls="aboutDialog" aria-label="Hakkında penceresini aç">
+          <span class="only-desktop">Hakkında</span>
+          <span class="only-mobile">ℹ️</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ===========================================================
+       Main Content — Masonry-like Grid
+       =========================================================== -->
+  <main id="main" class="container" role="main">
+    <section class="section" aria-label="Fotoğraflar ve Videolar">
+      <!-- Filtre/Arama (ileride istersen aktif edersin) -->
+      <div class="toolbar" role="region" aria-label="Araç Çubuğu">
+        <div class="filters">
+          <button class="chip is-active" data-filter="all" aria-pressed="true">Hepsi</button>
+          <button class="chip" data-filter="photo" aria-pressed="false">Fotoğraflar</button>
+          <button class="chip" data-filter="video" aria-pressed="false">Videolar</button>
+        </div>
+        <div class="search">
+          <input id="searchInput" type="search" inputmode="search" autocomplete="off" placeholder="Ara (etiket, ad) — örn: f4 veya v2" aria-label="Galeri içinde ara" />
+        </div>
+      </div>
+
+      <!-- Akışkan kart ızgarası -->
+      <div id="grid" class="grid" role="list" aria-live="polite" aria-busy="false">
+        <!-- Kartlar script.js içinde manifest'ten üretilecek -->
+      </div>
+    </section>
+  </main>
+
+  <!-- ===========================================================
+       Lightbox / Fullscreen Overlay (Modal)
+       =========================================================== -->
+  <div id="lightbox" class="lightbox is-hidden" role="dialog" aria-modal="true" aria-labelledby="lightboxTitle" aria-describedby="lightboxDesc" aria-hidden="true">
+    <!-- Üst Kontroller -->
+    <div class="lb__chrome">
+      <button id="lbClose" class="iconbtn" aria-label="Kapat (Esc)" title="Kapat (Esc)">
+        <!-- X -->
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 1 0 5.7 7.11L10.59 12l-4.9 4.89a1 1 0 1 0 1.41 1.41L12 13.41l4.89 4.9a1 1 0 0 0 1.41-1.41L13.41 12l4.9-4.89a1 1 0 0 0-.01-1.4Z" fill="currentColor"/></svg>
+      </button>
+    </div>
+
+    <!-- Sahne (medya alanı) -->
+    <div class="lb__stage" id="lbStage">
+      <div class="lb__loader" id="lbLoader" aria-hidden="true"></div>
+      <!-- İçerik (img veya video) JS ile yerleşecek -->
+    </div>
+
+    <!-- Navigasyon tuşları -->
+    <div class="lb__nav">
+      <button id="lbPrev" class="iconbtn" aria-label="Önceki (←)" title="Önceki (←)">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15.41 7.41a1 1 0 0 0-1.41 0L9 12l5 5a1 1 0 0 0 1.41-1.41L11.82 12l3.59-3.59a1 1 0 0 0 0-1.41Z" fill="currentColor"/></svg>
+      </button>
+      <h2 id="lightboxTitle" class="lb__title">Medya görüntüleyici</h2>
+      <p id="lightboxDesc" class="sr-only">Tam ekranda fotoğraf veya video izleyin. ESC ile kapatın, yön tuşlarıyla gezin.</p>
+      <button id="lbNext" class="iconbtn" aria-label="Sonraki (→)" title="Sonraki (→)">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M8.59 16.59a1 1 0 0 0 1.41 1.41L15 12l-5-5a1 1 0 1 0-1.41 1.41L12.18 12l-3.59 3.59Z" fill="currentColor"/></svg>
+      </button>
+    </div>
+
+    <!-- Altyazı/metadata alanı (isteğe bağlı) -->
+    <div class="lb__meta" id="lbMeta" role="note" aria-live="polite"></div>
+  </div>
+
+  <!-- ===========================================================
+       Hakkında Dialog (native modal değil, custom)
+       =========================================================== -->
+  <div id="aboutDialog" class="dialog is-hidden" role="dialog" aria-modal="true" aria-labelledby="aboutTitle" aria-hidden="true">
+    <div class="dialog__card">
+      <div class="dialog__head">
+        <h2 id="aboutTitle">Galeri Hakkında</h2>
+        <button id="aboutClose" class="iconbtn" aria-label="Kapat">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 1 0 5.7 7.11L10.59 12l-4.9 4.89a1 1 0 1 0 1.41 1.41L12 13.41l4.89 4.9a1 1 0 0 0 1.41-1.41L13.41 12l4.9-4.89a1 1 0 0 0-.01-1.4Z" fill="currentColor"/></svg>
+        </button>
+      </div>
+      <div class="dialog__body">
+        <p><strong>Özellikler:</strong> Responsive masonry, hash navigasyon, lazy loading, otomatik video kapak, dark/aydınlık tema, klavye+swipe, erişilebilirlik, yüksek performans.</p>
+        <p><strong>Kullanım:</strong> Kartlara tıklayın; ESC ile kapatın; ←/→ ile gezin; mobilde sağa/sola kaydırın.</p>
+        <p><strong>Not:</strong> Video kapakları, videonun ilk karesinden otomatik üretilir — ekstra poster dosyası gerekmez.</p>
+      </div>
+      <div class="dialog__foot">
+        <button id="aboutOk" class="btn primary">Tamam</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script (defer) -->
+  <script src="script.js" defer></script>
+
+  <!-- NoScript fallback -->
+  <noscript>
+    Bu galeri JavaScript gerektirir. Lütfen tarayıcınızda JavaScript'i etkinleştirin.
+  </noscript>
+</body>
+  </html>
