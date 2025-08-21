@@ -1,92 +1,68 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="description" content="Profesyonel, responsive fotoğraf & video galeri. 100 fotoğraf + 30 video destekli; otomatik video kapak üretimi; placeholder kutular; tam ekran; swipe; lazy load." />
-  <title>Profesyonel Foto & Video Galeri</title>
-
-  <!-- Stil -->
-  <link rel="stylesheet" href="style.css">
-
-  <!-- Favicon (inline small SVG) -->
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ctext y='20' x='1' font-size='18'%3E📷%3C/text%3E%3C/svg%3E">
-
-  <!-- Script (defer) -->
-  <script src="script.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Özel Galeri</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body class="theme-dark">
 
-  <!-- ===== Topbar ===== -->
-  <header class="topbar" role="banner">
-    <div class="topbar-inner">
-      <h1 class="brand" aria-label="Galeri Anasayfa">
-        <span class="brand-emoji" aria-hidden="true">📷</span>
-        <span class="brand-text">Galeri</span>
-      </h1>
+<div id="loader" class="loader is-active">
+    <div class="spinner"></div>
+</div>
 
-      <div class="controls" role="toolbar" aria-label="Araçlar">
-        <div class="filter-row" role="group" aria-label="Filtreler">
-          <button class="chip is-active" data-filter="all" aria-pressed="true">Hepsi</button>
-          <button class="chip" data-filter="photo" aria-pressed="false">Fotoğraflar</button>
-          <button class="chip" data-filter="video" aria-pressed="false">Videolar</button>
+<div id="loginScreen" class="screen active-screen">
+    <div class="login-container">
+        <div class="login-box">
+            <h1>Özel Galeriye Hoş Geldiniz</h1>
+            <p>Devam etmek için şifrenizi girin.</p>
+            <div class="input-group">
+                <input type="password" id="passwordInput" placeholder="Şifreniz..." required>
+                <button id="loginBtn">Giriş Yap</button>
+            </div>
+            <p id="errorMessage" class="error-message"></p>
         </div>
+    </div>
+</div>
 
-        <div class="search-wrap" role="search">
-          <input id="searchInput" class="search" type="search" placeholder="Ara (örn: f4, v12)" aria-label="Galeri ara" />
+<div id="galleryScreen" class="screen">
+    <header class="topbar">
+        <h1 class="brand">📷 Galeri</h1>
+        <div class="controls">
+            <button class="chip is-active" data-filter="all">Hepsi</button>
+            <button class="chip" data-filter="photo">Fotoğraflar</button>
+            <button class="chip" data-filter="video">Videolar</button>
+            <input id="searchInput" type="search" placeholder="Ara...">
+            <span id="resultCount" class="result-count"></span>
+            <button id="btnTheme" aria-label="Temayı Değiştir">🌙</button>
         </div>
+    </header>
 
-        <button id="btnTheme" class="btn ghost" aria-label="Temayı değiştir">🌓</button>
-        <button id="btnAbout" class="btn ghost" aria-haspopup="dialog" aria-controls="aboutDialog" aria-label="Hakkında">ℹ️</button>
-      </div>
-    </div>
-  </header>
+    <main id="main">
+        <div id="grid" class="grid"></div>
+    </main>
 
-  <!-- ===== Main: Grid ===== -->
-  <main id="main" class="container" role="main">
-    <section class="section" aria-label="Medya Galerisi">
-      <div id="grid" class="grid" role="list" aria-live="polite" aria-busy="false"></div>
-    </section>
-  </main>
-
-  <!-- ===== Lightbox / Fullscreen ===== -->
-  <div id="lightbox" class="lightbox is-hidden" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="lbTitle" aria-describedby="lbDesc">
-    <div class="lb-top">
-      <button id="lbClose" class="iconbtn" aria-label="Kapat (Esc)">✕</button>
-    </div>
-
-    <div id="lbStage" class="lb-stage">
-      <div id="lbLoader" class="lb-loader" aria-hidden="true"></div>
+    <div id="lightbox" class="lightbox">
+        <div class="lb-header">
+            <span id="lbCaption" class="lb-caption"></span>
+            <div class="lb-actions">
+                <button id="lbFullscreen" class="lb-button" aria-label="Tam Ekran">⛶</button>
+                <button id="lbClose" class="lb-button" aria-label="Kapat">✕</button>
+            </div>
+        </div>
+        <button id="lbPrev" class="lb-nav prev" aria-label="Önceki">←</button>
+        <button id="lbNext" class="lb-nav next" aria-label="Sonraki">→</button>
+        <div id="lbContent" class="lb-content"></div>
     </div>
 
-    <div class="lb-bottom">
-      <button id="lbPrev" class="iconbtn" aria-label="Önceki (←)">←</button>
-      <div id="lbTitle" class="lb-title">Medya</div>
-      <button id="lbNext" class="iconbtn" aria-label="Sonraki (→)">→</button>
-    </div>
-    <div id="lbMeta" class="lb-meta" aria-live="polite"></div>
-  </div>
+    <button id="scrollTopBtn" class="scroll-to-top" title="Yukarı Kaydır" aria-label="Yukarı Kaydır">↑</button>
+</div>
 
-  <!-- ===== About Dialog ===== -->
-  <div id="aboutDialog" class="dialog is-hidden" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="aboutTitle">
-    <div class="dialog-card">
-      <div class="dialog-head">
-        <h2 id="aboutTitle">Galeri Hakkında</h2>
-        <button id="aboutClose" class="iconbtn" aria-label="Kapat">✕</button>
-      </div>
-      <div class="dialog-body">
-        <p>Bu galeri; 100 fotoğraf + 30 video desteğiyle responsive, lazy-loading, otomatik video kapak üretimi (harici poster gerektirmez), placeholder kutular, masonry-benzeri düzen, tam ekran, klavye ve swipe navigasyonu sunar.</p>
-        <p>Kullanım: Kartlara tıklayın veya mobilde kaydırın. ESC ile çıkın. ← / → ile gezin.</p>
-      </div>
-      <div class="dialog-foot">
-        <button id="aboutOk" class="btn primary">Tamam</button>
-      </div>
-    </div>
-  </div>
-
-  <noscript>
-    Bu galeri JavaScript gerektirir. Lütfen tarayıcınızda JavaScript'i etkinleştirin.
-  </noscript>
+<script src="script.js" defer></script>
 
 </body>
 </html>
