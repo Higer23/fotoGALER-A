@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Basit Galeri</title>
+<style>
+body {
+    font-family: sans-serif;
+    background-color: #1a1a1a;
+    color: #fff;
+    margin: 0;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    padding: 10px;
+}
+
+.card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.card img, .card video {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+.lightbox {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.lightbox.active {
+    display: flex;
+}
+
+.lightbox-content {
+    max-width: 90%;
+    max-height: 90%;
+}
+
+.lightbox-content img, .lightbox-content video {
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+    object-fit: contain;
+}
+
+.lightbox-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 24px;
+    border-radius: 50%;
+    user-select: none;
+}
+
+.lightbox-nav.prev {
+    left: 20px;
+}
+
+.lightbox-nav.next {
+    right: 20px;
+}
+
+.lightbox-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 24px;
+    border-radius: 50%;
+    z-index: 101;
+}
+
+@media (max-width: 600px) {
+    .lightbox-nav {
+        display: none; /* Mobil cihazlarda navigasyon tuşlarını gizle */
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="grid" id="galleryGrid"></div>
+
+<div class="lightbox" id="lightbox">
+    <button class="lightbox-close" id="closeBtn">&times;</button>
+    <button class="lightbox-nav prev" id="prevBtn">&lt;</button>
+    <div class="lightbox-content" id="lightboxContent"></div>
+    <button class="lightbox-nav next" id="nextBtn">&gt;</button>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const galleryGrid = document.getElementById('galleryGrid');
+    const lightbox = document.getElementById('lightbox');
+    const lightboxContent = document.getElementById('lightboxContent');
+    const closeBtn = document.getElementById('closeBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    const items = [];
+    for (let i = 1; i <= 60; i++) {
+        items.push({ type: 'photo', src: `images/f${i}.jpg` });
+    }
+    for (let i = 1; i <= 25; i++) {
+        items.push({ type: 'video', src: `videos/v${i}.mp4` });
+    }
+
+    let currentIndex = 0;
+
+    function renderGallery() {
+        galleryGrid.innerHTML = '';
+        items.forEach((item, index) => {
+            const card = document.createElement('div');
+            card.classList.add('card');
+            card.dataset.index = index;
+
+            if (item.type === 'photo') {
+                const img = document.createElement('img');
+                img.src = item.src;
+                img.alt = `Photo ${index + 1}`;
+                card.appendChild(img);
+            } else if (item.type === 'video') {
+                const video = document.createElement('video');
+                video.src = item.src;
+                video.muted = true;
+                video.playsInline = true;
+                card.appendChild(video);
+            }
+            galleryGrid.appendChild(card);
+        });
+    }
+
+    function openLightbox(index) {
+        currentIndex = index;
+        updateLightboxContent();
+        lightbox.classList.add('active');
+    }
+
+    function updateLightboxContent() {
+        const item = items[currentIndex];
+        lightboxContent.innerHTML = '';
+        if (item.type === 'photo') {
+            const img = document.createElement('img');
+            img.src = item.src;
+            lightboxContent.appendChild(img);
+        } else if (item.type === 'video') {
+            const video = document.createElement('video');
+            video.src = item.src;
+            video.controls = true;
+            video.autoplay = true;
+            lightboxContent.appendChild(video);
+        }
+    }
+
+    galleryGrid.addEventListener('click', (e) => {
+        const card = e.target.closest('.card');
+        if (card) {
+            openLightbox(parseInt(card.dataset.index));
+        }
+    });
+
+    closeBtn.addEventListener('click', () => {
+        lightbox.classList.remove('active');
+        lightboxContent.innerHTML = ''; // İçeriği temizle
+    });
+
+    prevBtn.addEventListener('click', () => {
+        currentIndex = (currentIndex - 1 + items.length) % items.length;
+        updateLightboxContent();
+    });
+
+    nextBtn.addEventListener('click', () => {
+        currentIndex = (currentIndex + 1) % items.length;
+        updateLightboxContent();
+    });
+
+    renderGallery();
+});
+</script>
+</body>
+</html>
