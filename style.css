@@ -1,0 +1,25 @@
+/* Temel reset */
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Inter,sans-serif;background:#0b0f14;color:#e6eef8;line-height:1.4;}
+.theme-light{background:#f7fafc;color:#0b1220;}
+.topbar{position:sticky;top:0;padding:12px;background:#11161b;display:flex;justify-content:space-between;align-items:center;gap:10px;z-index:10;}
+.brand{font-size:1.5rem;font-weight:700;}
+.controls{display:flex;align-items:center;gap:10px;}
+.chip{padding:6px 12px;border-radius:999px;background:rgba(255,255,255,0.05);color:#fff;border:none;cursor:pointer;transition:0.2s;}
+.chip.is-active{background:#60a5fa;color:#fff;}
+#searchInput{padding:6px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;padding:10px;}
+.card{position:relative;overflow:hidden;border-radius:12px;background:#11161b;cursor:pointer;transition:transform .2s,box-shadow .2s;}
+.card:hover{transform:translateY(-5px);box-shadow:0 12px 24px rgba(0,0,0,0.6);}
+.card img, .card video{width:100%;height:auto;display:block;object-fit:cover;}
+.card.placeholder{background:transparent;border:1px solid transparent;position:relative;}
+.card.placeholder:hover::after{content:attr(data-placeholder);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.2rem;background:rgba(0,0,0,0.5);}
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,0.9);display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .3s;}
+.lightbox.is-hidden{opacity:0;pointer-events:none;}
+.lightbox:not(.is-hidden){opacity:1;pointer-events:auto;}
+.lb-content img, .lb-content video{max-width:95vw;max-height:85vh;border-radius:12px;}
+.lb-close, .lb-nav{position:absolute;top:20px;padding:6px 10px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:6px;cursor:pointer;z-index:10;}
+.lb-close{right:20px;}
+.lb-nav.prev{left:20px;}
+.lb-nav.next{right:60px;}
+@media(max-width:600px){.grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));}}
