@@ -1,81 +1,453 @@
-// Giriş şifre kontrolü
-const passwordInput = document.getElementById("password");
-const loginBtn = document.getElementById("loginBtn");
-const loginScreen = document.getElementById("loginScreen");
-const gallery = document.getElementById("gallery");
-const errorMessage = document.getElementById("error");
+/* =================================================================================
+   SCRIPT.JS — Gallery engine
+   - 100 fotoğraf + 30 video
+   - placeholder kutular (dosya yoksa arkaplanla aynı görünür; hover'da "Yakında")
+   - otomatik video poster üretimi (ilk kareden canvas -> dataURL)
+   - masonry-like grid: CSS grid-auto-rows + JS grid-row-end hesaplama
+   - lightbox (hash routing #/media/:index), ESC, ←/→, swipe, aria
+   - filtre & arama
+   ================================================================================= */
 
-const correctPassword = "halil<3berra"; // Şifreyi buraya yaz
+/* ---------------------- Helpers ---------------------- */
+const $ = (sel, ctx=document) => ctx.querySelector(sel);
+const $$ = (sel, ctx=document) => Array.from((ctx||document).querySelectorAll(sel));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const raf = (fn) => requestAnimationFrame(fn);
+const idle = (fn) => ('requestIdleCallback' in window) ? requestIdleCallback(fn) : setTimeout(fn, 1);
 
-loginBtn.addEventListener("click", function () {
-  const password = passwordInput.value;
-  if (password === correctPassword) {
-    loginScreen.classList.add("hidden");
-    gallery.classList.remove("hidden");
-  } else {
-    errorMessage.style.display = "block";
-  }
-});
-
-// Lightbox (tam ekran görüntüleme)
-const lightbox = document.getElementById("lightbox");
-const lbClose = document.getElementById("lbClose");
-const lbImage = document.getElementById("lbImage");
-const lbVideo = document.getElementById("lbVideo");
-
-const images = [
-  "images/f1.jpg", "images/f2.jpg", "images/f3.jpg", "images/f4.jpg", "images/f5.jpg", 
-  "images/f6.jpg", "images/f7.jpg", "images/f8.jpg", "images/f9.jpg", "images/f10.jpg", 
-  "images/f11.jpg", "images/f12.jpg", "images/f13.jpg", "images/f14.jpg", "images/f15.jpg", 
-  "images/f16.jpg", "images/f17.jpg", "images/f18.jpg", "images/f19.jpg", "images/f20.jpg", 
-  "images/f21.jpg", "images/f22.jpg", "images/f23.jpg", "images/f24.jpg", "images/f25.jpg", 
-  "images/f26.jpg", "images/f27.jpg", "images/f28.jpg", "images/f29.jpg", "images/f30.jpg", 
-  "images/f31.jpg", "images/f32.jpg", "images/f33.jpg", "images/f34.jpg", "images/f35.jpg", 
-  "images/f36.jpg", "images/f37.jpg", "images/f38.jpg", "images/f39.jpg", "images/f40.jpg", 
-  "images/f41.jpg", "images/f42.jpg", "images/f43.jpg", "images/f44.jpg", "images/f45.jpg", 
-  "images/f46.jpg", "images/f47.jpg", "images/f48.jpg", "images/f49.jpg", "images/f50.jpg", 
-  "images/f51.jpg", "images/f52.jpg", "images/f53.jpg", "images/f54.jpg", "images/f55.jpg", 
-  "images/f56.jpg", "images/f57.jpg", "images/f58.jpg", "images/f59.jpg", "images/f60.jpg", 
-  "images/f61.jpg", "images/f62.jpg", "images/f63.jpg", "images/f64.jpg", "images/f65.jpg", 
-  "images/f66.jpg", "images/f67.jpg", "images/f68.jpg", "images/f69.jpg", "images/f70.jpg", 
-  "images/f71.jpg", "images/f72.jpg", "images/f73.jpg", "images/f74.jpg", "images/f75.jpg", 
-  "images/f76.jpg", "images/f77.jpg", "images/f78.jpg", "images/f79.jpg", "images/f80.jpg", 
-  "images/f81.jpg", "images/f82.jpg", "images/f83.jpg", "images/f84.jpg", "images/f85.jpg", 
-  "images/f86.jpg", "images/f87.jpg", "images/f88.jpg", "images/f89.jpg", "images/f90.jpg", 
-  "images/f91.jpg", "images/f92.jpg", "images/f93.jpg", "images/f94.jpg", "images/f95.jpg", 
-  "images/f96.jpg", "images/f97.jpg", "images/f98.jpg", "images/f99.jpg", "images/f100.jpg"
-];
-
-const videos = [
-  "videos/v1.mp4", "videos/v2.mp4", "videos/v3.mp4", "videos/v4.mp4", "videos/v5.mp4", 
-  "videos/v6.mp4", "videos/v7.mp4", "videos/v8.mp4", "videos/v9.mp4", "videos/v10.mp4", 
-  "videos/v11.mp4", "videos/v12.mp4", "videos/v13.mp4", "videos/v14.mp4", "videos/v15.mp4", 
-  "videos/v16.mp4", "videos/v17.mp4", "videos/v18.mp4", "videos/v19.mp4", "videos/v20.mp4", 
-  "videos/v21.mp4", "videos/v22.mp4", "videos/v23.mp4", "videos/v24.mp4", "videos/v25.mp4", 
-  "videos/v26.mp4", "videos/v27.mp4", "videos/v28.mp4", "videos/v29.mp4", "videos/v30.mp4", 
-  "videos/v31.mp4", "videos/v32.mp4", "videos/v33.mp4", "videos/v34.mp4", "videos/v35.mp4", 
-  "videos/v36.mp4", "videos/v37.mp4", "videos/v38.mp4", "videos/v39.mp4", "videos/v40.mp4", 
-  "videos/v41.mp4", "videos/v42.mp4", "videos/v43.mp4", "videos/v44.mp4", "videos/v45.mp4", 
-  "videos/v46.mp4", "videos/v47.mp4", "videos/v48.mp4", "videos/v49.mp4", "videos/v50.mp4"
-];
-
-function openLightbox(index) {
-  if (index < images.length) {
-    lbImage.src = images[index];
-    lbImage.style.display = "block";
-    lbVideo.style.display = "none";
-  } else {
-    const videoIndex = index - images.length;
-    lbVideo.src = videos[videoIndex];
-    lbImage.style.display = "none";
-    lbVideo.style.display = "block";
-  }
-
-  lightbox.classList.remove("hidden");
+function humanDuration(seconds){
+  if(!isFinite(seconds)) return '';
+  const m = Math.floor(seconds/60);
+  const s = Math.round(seconds%60);
+  return `${m}:${String(s).padStart(2,'0')}`;
 }
 
-lbClose.addEventListener("click", () => {
-  lightbox.classList.add("hidden");
-  lbImage.style.display = "none";
-  lbVideo.style.display = "none";
+/* ---------------------- Manifest ---------------------- */
+// Bilinen ölçüler (kullanıcı verdi)
+const knownDims = {
+  f1:  { w:2418, h:2870 },
+  f2:  { w:2235, h:2586 },
+  f3:  { w:1777, h:2808 },
+  f4:  { w:2078, h:20232 } // olağanüstü uzun örnek
+  // f5..f100 bilinmiyor -> natural ölçü yüklendiğinde okunacak
+};
+
+// Build media array: 100 photos, 30 videos
+const PHOTOS = 100;
+const VIDEOS = 30;
+
+const media = [];
+
+// push photos
+for(let i=1;i<=PHOTOS;i++){
+  const id = `f${i}`;
+  const dim = knownDims[id] || null;
+  media.push({
+    type: 'image',
+    id,
+    src: `images/${id}.jpg`,
+    w: dim?.w,
+    h: dim?.h,
+    tags: [id,'photo']
+  });
+}
+
+// push videos
+for(let i=1;i<=VIDEOS;i++){
+  const id = `v${i}`;
+  media.push({
+    type: 'video',
+    id,
+    src: `videos/${id}.mp4`,
+    // poster: none; will be auto-generated
+    duration: undefined,
+    tags: [id,'video']
+  });
+}
+
+/* ---------------------- DOM refs ---------------------- */
+const gridEl = $('#grid');
+const filterBtns = $$('.chip');
+const searchInput = $('#searchInput');
+
+const lightbox = $('#lightbox');
+const lbStage = $('#lbStage');
+const lbLoader = $('#lbLoader');
+const lbClose = $('#lbClose');
+const lbPrev = $('#lbPrev');
+const lbNext = $('#lbNext');
+const lbTitle = $('.lb-title');
+const lbMeta = $('#lbMeta');
+
+const btnTheme = $('#btnTheme');
+const btnAbout = $('#btnAbout');
+const aboutDialog = $('#aboutDialog');
+const aboutClose = $('#aboutClose');
+const aboutOk = $('#aboutOk');
+
+let currentFilter = 'all';
+let currentQuery = '';
+let currentIndex = -1;
+
+/* ---------------------- Create card ---------------------- */
+function createCard(item, index){
+  const a = document.createElement('a');
+  a.className = 'card';
+  a.setAttribute('role','listitem');
+  a.setAttribute('aria-label', `${item.type === 'image'? 'Fotoğraf':'Video'} ${item.id}`);
+  a.href = `#/media/${index}`;
+  a.dataset.index = String(index);
+  a.dataset.type = item.type;
+
+  // media slot
+  const mediaEl = document.createElement('img');
+  mediaEl.className = 'card__media';
+  mediaEl.alt = item.id;
+  mediaEl.decoding = 'async';
+  mediaEl.loading = 'lazy';
+
+  // If image
+  if(item.type === 'image'){
+    mediaEl.src = item.src;
+    if(item.w && item.h){
+      mediaEl.width = item.w;
+      mediaEl.height = item.h;
+      a.dataset.w = String(item.w);
+      a.dataset.h = String(item.h);
+    }
+    a.appendChild(mediaEl);
+  } else {
+    // video placeholder img (we will replace src with dataURL when IO triggers)
+    mediaEl.src = transparentSVG();
+    a.appendChild(mediaEl);
+
+    // badge (Video / duration)
+    const badge = document.createElement('div');
+    badge.className = 'card__badge';
+    badge.innerHTML = `<span class="dot"></span><span class="badge-text">Video</span>`;
+    a.appendChild(badge);
+  }
+
+  // Click: set hash to open
+  a.addEventListener('click', (e) => {
+    e.preventDefault();
+    location.hash = `#/media/${index}`;
+  });
+
+  // image error -> placeholder behavior
+  mediaEl.addEventListener('error', () => {
+    // file not found: convert to placeholder
+    a.classList.add('placeholder');
+    a.dataset.placeholder = (item.type === 'image') ? '📷 Yakında' : '🎬 Yakında';
+    // remove media src to avoid broken icon
+    mediaEl.remove();
+    // set a min height so grid looks stable; compute row span after
+    a.style.minHeight = '120px';
+    computeRowSpan(a);
+  }, { once:true });
+
+  // when image loads -> compute row span (for masonry)
+  mediaEl.addEventListener('load', () => computeRowSpan(a), { once:true });
+
+  return a;
+}
+
+/* Transparent svg tiny */
+function transparentSVG(){
+  return 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%2272%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23000%22%22 %3E%3C/rect%3E%3C/svg%3E';
+}
+
+/* ---------------------- Render grid & masonry spans ---------------------- */
+function renderGrid(list){
+  gridEl.setAttribute('aria-busy','true');
+  gridEl.innerHTML = '';
+  const frag = document.createDocumentFragment();
+
+  list.forEach((item, idx) => {
+    const card = createCard(item, idx);
+    frag.appendChild(card);
+  });
+
+  gridEl.appendChild(frag);
+  gridEl.setAttribute('aria-busy','false');
+
+  // compute spans after layout
+  idle(() => {
+    const cards = $$('.card', gridEl);
+    cards.forEach(c => computeRowSpan(c));
+  });
+
+  // Setup video thumbnail IO and metadata
+  setupVideoThumbnails(list);
+}
+
+/* grid-row span hesaplama */
+function computeRowSpan(card){
+  const img = card.querySelector('.card__media');
+  if(!img) return;
+  const style = getComputedStyle(gridEl);
+  const rowH = parseFloat(style.getPropertyValue('grid-auto-rows')) || 6;
+  const gap = parseFloat(style.getPropertyValue('gap')) || 12;
+
+  function setSpan(){
+    const height = img.getBoundingClientRect().height;
+    const span = Math.ceil((height + gap) / (rowH + gap));
+    card.style.gridRowEnd = `span ${span}`;
+  }
+
+  if(img.complete && img.naturalHeight !== 0){
+    setSpan();
+  } else {
+    img.addEventListener('load', setSpan, { once:true });
+    img.addEventListener('error', () => {
+      // ensure minimal span
+      card.style.gridRowEnd = `span ${Math.ceil(180 / rowH)}`;
+    }, { once:true });
+  }
+}
+
+/* ---------------------- Video thumbnail / poster generation (IO) ---------------------- */
+function setupVideoThumbnails(list){
+  const videoCards = $$('.card[data-type="video"]', gridEl);
+  if(videoCards.length === 0) return;
+
+  const io = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      if(!entry.isIntersecting) return;
+      const card = entry.target;
+      const idx = Number(card.dataset.index);
+      const item = list[idx];
+      const img = card.querySelector('img.card__media');
+      const badgeText = card.querySelector('.card__badge .badge-text');
+
+      // create off-DOM video
+      const v = document.createElement('video');
+      v.preload = 'auto';
+      v.muted = true;
+      v.playsInline = true;
+      v.src = item.src;
+
+      // When metadata loaded -> duration
+      v.addEventListener('loadedmetadata', () => {
+        item.duration = v.duration;
+        if(badgeText) badgeText.textContent = `Video • ${humanDuration(v.duration)}`;
+      }, { once:true });
+
+      // When data available -> capture frame
+      v.addEventListener('loadeddata', async () => {
+        try{
+          // seek a tiny bit to avoid black frames
+          v.currentTime = Math.min(0.15, (v.duration || 1) * 0.05);
+          await new Promise(res => v.addEventListener('seeked', res, { once:true }));
+
+          const canvas = document.createElement('canvas');
+          canvas.width = v.videoWidth || 640;
+          canvas.height = v.videoHeight || 360;
+          const ctx = canvas.getContext('2d');
+          // draw with cover-like behavior: scale to fit
+          ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+          const dataURL = canvas.toDataURL('image/jpeg', 0.7);
+
+          // set image src to dataURL
+          if(img) {
+            img.src = dataURL;
+            img.alt = item.id + ' (video poster)';
+            computeRowSpan(card);
+          }
+        }catch(e){
+          // ignore
+        }finally{
+          obs.unobserve(card);
+        }
+      }, { once:true });
+
+      // trigger load
+      v.load();
+    });
+  }, { rootMargin: '200px 0px' });
+
+  videoCards.forEach(c => io.observe(c));
+}
+
+/* ---------------------- Filter & Search ---------------------- */
+function applyFilters(){
+  const q = currentQuery.trim().toLowerCase();
+  const filtered = media.filter(m => {
+    if(currentFilter !== 'all' && m.type !== currentFilter) return false;
+    if(!q) return true;
+    return m.id.toLowerCase().includes(q) || (m.tags || []).some(t => t.toLowerCase().includes(q));
+  });
+  renderGrid(filtered);
+}
+
+/* filter buttons */
+filterBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    filterBtns.forEach(b => { b.classList.remove('is-active'); b.setAttribute('aria-pressed','false'); });
+    btn.classList.add('is-active'); btn.setAttribute('aria-pressed','true');
+    currentFilter = btn.dataset.filter;
+    applyFilters();
+  });
 });
+
+/* search */
+let searchTimer = null;
+searchInput.addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    currentQuery = searchInput.value;
+    applyFilters();
+  }, 180);
+});
+
+/* ---------------------- Lightbox (open/close/nav/hash) ---------------------- */
+function openLightbox(index, pushHash=true){
+  index = clamp(index, 0, media.length-1);
+  currentIndex = index;
+
+  // show loader
+  lbStage.innerHTML = '';
+  lbStage.appendChild(lbLoader);
+  lightbox.classList.remove('is-hidden');
+  lightbox.setAttribute('aria-hidden','false');
+  document.documentElement.style.overflow = 'hidden';
+
+  const item = media[index];
+
+  if(item.type === 'image'){
+    const img = new Image();
+    img.className = 'fade-in';
+    img.alt = item.id;
+    img.decoding = 'async';
+    img.src = item.src;
+    img.addEventListener('load', () => {
+      lbStage.replaceChildren(img);
+      lbTitle.textContent = `Fotoğraf • ${item.id}`;
+      lbMeta.textContent = item.w && item.h ? `${item.w}×${item.h}` : '';
+    }, { once:true });
+    img.addEventListener('error', () => {
+      lbStage.textContent = 'Görüntü yüklenemedi.';
+      lbTitle.textContent = 'Yükleme hatası';
+    }, { once:true });
+  } else {
+    const v = document.createElement('video');
+    v.controls = true;
+    v.autoplay = false; // kullanıcı etkileşimi ile oynatılır (mobil politikalar)
+    v.playsInline = true;
+    v.preload = 'metadata';
+    v.src = item.src;
+    v.addEventListener('loadedmetadata', () => {
+      lbStage.replaceChildren(v);
+      lbTitle.textContent = `Video • ${item.id}`;
+      lbMeta.textContent = item.duration ? humanDuration(item.duration) : '';
+    }, { once:true });
+    v.addEventListener('error', () => {
+      lbStage.textContent = 'Video yüklenemedi.';
+      lbTitle.textContent = 'Yükleme hatası';
+    }, { once:true });
+  }
+
+  if(pushHash){
+    location.hash = `#/media/${index}`;
+  }
+}
+
+function closeLightbox(popHash=true){
+  const v = lbStage.querySelector('video');
+  if(v) try{ v.pause(); } catch(e){}
+  lightbox.classList.add('is-hidden');
+  lightbox.setAttribute('aria-hidden','true');
+  document.documentElement.style.overflow = '';
+  lbStage.innerHTML = '';
+  lbMeta.textContent = '';
+  if(popHash){
+    if(location.hash.startsWith('#/media/')){
+      history.pushState('', document.title, window.location.pathname + window.location.search);
+    }
+  }
+}
+function prevItem(){ if(currentIndex>=0) openLightbox((currentIndex-1+media.length)%media.length); }
+function nextItem(){ if(currentIndex>=0) openLightbox((currentIndex+1)%media.length); }
+
+/* lightbox buttons */
+lbClose.addEventListener('click', () => closeLightbox());
+lbPrev.addEventListener('click', prevItem);
+lbNext.addEventListener('click', nextItem);
+
+/* keyboard */
+document.addEventListener('keydown', (e) => {
+  if(lightbox.classList.contains('is-hidden')) return;
+  if(e.key === 'Escape') closeLightbox();
+  if(e.key === 'ArrowLeft') prevItem();
+  if(e.key === 'ArrowRight') nextItem();
+}, { passive:true });
+
+/* swipe */
+let touchStartX=0, touchStartY=0, touchLock=false;
+lightbox.addEventListener('touchstart',(e)=>{ const t=e.changedTouches[0]; touchStartX=t.clientX; touchStartY=t.clientY; touchLock=false; }, { passive:true });
+lightbox.addEventListener('touchmove',(e)=>{ const t=e.changedTouches[0]; const dx=t.clientX-touchStartX; const dy=t.clientY-touchStartY; if(!touchLock) touchLock = Math.abs(dx)>Math.abs(dy) && Math.abs(dx)>8; }, { passive:true });
+lightbox.addEventListener('touchend',(e)=>{ if(!touchLock) return; const t=e.changedTouches[0]; const dx=t.clientX-touchStartX; if(dx>50) prevItem(); else if(dx<-50) nextItem(); }, { passive:true });
+
+/* Hash routing */
+function handleHash(){
+  const h = location.hash || '';
+  if(h.startsWith('#/media/')){
+    const idxStr = h.replace('#/media/','').trim();
+    const idx = Number(idxStr);
+    if(Number.isInteger(idx) && idx>=0 && idx<media.length){ openLightbox(idx, false); return; }
+  }
+  // otherwise, close if open
+  if(!lightbox.classList.contains('is-hidden')) closeLightbox(false);
+}
+window.addEventListener('hashchange', handleHash);
+
+/* ---------------------- Theme ---------------------- */
+function applyTheme(saved){
+  const light = saved === 'light';
+  document.body.classList.toggle('theme-light', light);
+  document.body.classList.toggle('theme-dark', !light);
+  btnTheme.textContent = light ? '☀️' : '🌙';
+  localStorage.setItem('gallery-theme', light ? 'light' : 'dark');
+}
+btnTheme.addEventListener('click', () => {
+  const nowLight = !document.body.classList.contains('theme-light');
+  applyTheme(nowLight ? 'light' : 'dark');
+});
+
+/* ---------------------- About dialog ---------------------- */
+btnAbout.addEventListener('click', ()=> { aboutDialog.classList.remove('is-hidden'); aboutDialog.setAttribute('aria-hidden','false'); document.documentElement.style.overflow='hidden'; });
+aboutClose.addEventListener('click', ()=> { aboutDialog.classList.add('is-hidden'); aboutDialog.setAttribute('aria-hidden','true'); document.documentElement.style.overflow=''; });
+aboutOk.addEventListener('click', ()=> { aboutClose.click(); });
+aboutDialog.addEventListener('click', (e)=> { if(e.target === aboutDialog) aboutClose.click(); });
+
+/* ---------------------- Boot / Init ---------------------- */
+function boot(){
+  // theme from storage
+  const theme = localStorage.getItem('gallery-theme') || 'dark';
+  applyTheme(theme === 'light' ? 'light' : 'dark');
+
+  // initial render (all)
+  currentFilter = 'all';
+  currentQuery = '';
+  applyFilters();
+
+  // on resize -> recompute spans
+  let rid = 0;
+  window.addEventListener('resize', () => {
+    cancelAnimationFrame(rid);
+    rid = raf(()=> $$('.card', gridEl).forEach(c => computeRowSpan(c)));
+  }, { passive:true });
+
+  // handle hash at load
+  handleHash();
+}
+
+/* set initial filter buttons attribute data-filter for script usage */
+filterBtns.forEach(b => {
+  if(!b.dataset.filter) {
+    // ensure dataset.filter exists (chip elements had it in HTML)
+  }
+});
+
+/* kick off when DOM loaded */
+document.addEventListener('DOMContentLoaded', boot);
