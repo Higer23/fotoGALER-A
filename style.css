@@ -1,110 +1,134 @@
-/* Ana Temalar */
-:root {
-  --bg: #0b0f14;
-  --card: #11161b;
-  --fg: #e6eef8;
-  --muted: #92a0b3;
-  --accent: #60a5fa;
-  --highlight: #f43f5e;
-  --radius: 12px;
-  --shadow: 0 12px 36px rgba(0,0,0,0.55);
-  --grid-row: 6px;
-}
+/* Genel Tasarım */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: Arial, sans-serif; background-color: #111; color: #fff; }
+
 body.theme-light {
-  --bg: #f7fafc;
-  --card: #fff;
-  --fg: #0b1220;
-  --muted: #425466;
-  --accent: #2563eb;
-  --highlight: #9d174d;
-  --shadow: 0 12px 36px rgba(2,6,23,0.06);
+  background-color: #f7f7f7;
+  color: #000;
 }
 
-/* Şifre Girişi */
-.password-box {
+.hidden { display: none; }
+
+h2 {
+  font-size: 1.5rem;
+  color: #fff;
+  text-align: center;
+}
+
+/* Şifre Ekranı */
+.login-screen {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background: rgba(0,0,0,0.8);
-  color: #fff;
-  text-align: center;
-}
-.password-box h2 {
-  margin-bottom: 20px;
-}
-.password-box input {
-  padding: 10px;
-  border-radius: 8px;
-  border: 2px solid var(--accent);
-  background-color: #333;
-  color: #fff;
-  width: 250px;
-  margin-bottom: 20px;
-}
-.password-box button {
-  padding: 10px 15px;
-  background-color: var(--accent);
-  border: none;
-  border-radius: 8px;
-  color: #fff;
-  cursor: pointer;
-  font-size: 16px;
+  background-color: #222;
 }
 
+input[type="password"] {
+  padding: 10px;
+  margin: 10px;
+  background-color: #333;
+  border: 1px solid #555;
+  color: #fff;
+  border-radius: 5px;
+  width: 80%;
+}
+
+button {
+  padding: 10px 20px;
+  background-color: #60a5fa;
+  border: none;
+  color: #fff;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover { background-color: #4c8bc5; }
+
+/* Hata mesajı */
 .error-message {
-  color: #f43f5e;
+  color: red;
+  display: none;
   margin-top: 10px;
 }
 
-/* İçerik ve Medya Stil Düzenlemeleri */
-.container {
-  max-width: 1280px;
-  margin: auto;
-  padding: 16px;
+/* Galeri */
+.gallery {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 20px;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  grid-auto-rows: var(--grid-row);
-  gap: 12px;
-}
-
-.card {
+.gallery-item {
+  margin: 10px;
   position: relative;
-  overflow: hidden;
-  border-radius: var(--radius);
-  background: var(--card);
-  box-shadow: var(--shadow);
-  cursor: pointer;
-  transition: .2s;
 }
 
-.card img {
-  width: 100%;
-  display: block;
+.gallery-item img, .gallery-item video {
+  width: 200px;
+  height: 200px;
   object-fit: cover;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: transform 0.3s ease;
 }
 
-.card.featured {
-  border: 3px solid var(--highlight);
+.gallery-item img:hover, .gallery-item video:hover {
+  transform: scale(1.05);
 }
 
-.lb-stage {
-  display: grid;
-  place-items: center;
-  min-height: 60vh;
+.gallery-item.placeholder {
+  background: #333;
+  width: 200px;
+  height: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+  border-radius: 8px;
 }
 
-.lb-stage img, .lb-stage video {
-  max-width: 96vw;
-  max-height: 86vh;
-  border-radius: 14px;
-  background: #000;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+.placeholder-text {
+  font-size: 1.2rem;
+  font-weight: bold;
 }
 
-/* Daha Fazla Yükle Butonu */
-.load-more-btn {
+/* Lightbox */
+.lightbox {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+.lightbox-image, .lightbox-video {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 10px;
+}
+
+#lbClose {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background-color: rgba(255, 255, 255, 0.7);
+  color: #000;
+  border: none;
+  padding: 10px;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+#lbClose:hover {
+  background-color: rgba(255, 255, 255, 0.9);
+  }
