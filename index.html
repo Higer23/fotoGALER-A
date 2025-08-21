@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Özel Galeri</title>
+    <title>Modern Galeri</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
@@ -11,25 +11,7 @@
 </head>
 <body class="theme-dark">
 
-<div id="loader" class="loader is-active">
-    <div class="spinner"></div>
-</div>
-
-<div id="loginScreen" class="screen active-screen">
-    <div class="login-container">
-        <div class="login-box">
-            <h1>Özel Galeriye Hoş Geldiniz</h1>
-            <p>Devam etmek için şifrenizi girin.</p>
-            <div class="input-group">
-                <input type="password" id="passwordInput" placeholder="Şifreniz..." required>
-                <button id="loginBtn">Giriş Yap</button>
-            </div>
-            <p id="errorMessage" class="error-message"></p>
-        </div>
-    </div>
-</div>
-
-<div id="galleryScreen" class="screen">
+<div id="galleryScreen" class="screen active-screen">
     <header class="topbar">
         <h1 class="brand">📷 Galeri</h1>
         <div class="controls">
@@ -50,12 +32,15 @@
         <div class="lb-header">
             <span id="lbCaption" class="lb-caption"></span>
             <div class="lb-actions">
+                <a id="lbDownload" class="lb-button" href="#" download aria-label="İndir">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </a>
                 <button id="lbFullscreen" class="lb-button" aria-label="Tam Ekran">⛶</button>
                 <button id="lbClose" class="lb-button" aria-label="Kapat">✕</button>
             </div>
         </div>
-        <button id="lbPrev" class="lb-nav prev" aria-label="Önceki">←</button>
-        <button id="lbNext" class="lb-nav next" aria-label="Sonraki">→</button>
+        <button id="lbPrev" class="lb-nav prev" aria-label="Önceki">‹</button>
+        <button id="lbNext" class="lb-nav next" aria-label="Sonraki">›</button>
         <div id="lbContent" class="lb-content"></div>
     </div>
 
