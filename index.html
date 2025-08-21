@@ -3,24 +3,34 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Galeri Girişi</title>
-<link rel="stylesheet" href="css/login.css">
+<title>Profesyonel Galeri</title>
+<link rel="stylesheet" href="style.css">
+<script defer src="script.js"></script>
 </head>
-<body>
+<body class="theme-dark">
 
-<div class="login-container">
-  <div class="login-box">
-    <h1>Profesyonel Galeri Girişi</h1>
-    <p>Lütfen devam etmek için şifrenizi girin.</p>
-    <div class="input-group">
-      <input type="password" id="passwordInput" placeholder="Şifreniz..." required>
-      <button id="loginBtn">Giriş Yap</button>
-    </div>
-    <p id="errorMessage" class="error-message"></p>
+<header class="topbar">
+  <h1 class="brand">📷 Galeri</h1>
+  <div class="controls">
+    <button class="chip is-active" data-filter="all">Hepsi</button>
+    <button class="chip" data-filter="photo">Fotoğraflar</button>
+    <button class="chip" data-filter="video">Videolar</button>
+    <input id="searchInput" type="search" placeholder="Ara...">
+    <button id="btnTheme">🌓</button>
   </div>
-</div>
+</header>
 
-<script src="js/login.js"></script>
+<main id="main">
+  <div id="grid" class="grid"></div>
+</main>
+
+<!-- Lightbox -->
+<div id="lightbox" class="lightbox is-hidden">
+  <button id="lbClose" class="lb-close">✕</button>
+  <button id="lbPrev" class="lb-nav prev">←</button>
+  <button id="lbNext" class="lb-nav next">→</button>
+  <div id="lbContent" class="lb-content"></div>
+</div>
 
 </body>
 </html>
