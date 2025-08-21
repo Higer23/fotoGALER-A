@@ -1,7 +1,7 @@
 /* Google Fonts Import */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
 
-/* Tema Renkleri ve Değişkenler */
+/* --- Tema Renkleri ve Değişkenler --- */
 :root {
     --bg-primary: #0b0f14;
     --bg-secondary: #11161b;
@@ -11,7 +11,6 @@
     --accent-hover: #3b82f6;
     --border-color: rgba(255, 255, 255, 0.1);
     --shadow-color: rgba(0, 0, 0, 0.4);
-    --error-color: #ef4444;
 }
 
 .theme-light {
@@ -23,7 +22,7 @@
     --shadow-color: rgba(0, 0, 0, 0.1);
 }
 
-/* Temel Reset ve Genel Stiller */
+/* --- Temel Reset ve Genel Stiller --- */
 * {
     margin: 0;
     padding: 0;
@@ -48,114 +47,14 @@ body {
     min-height: 100vh;
 }
 
-/* Yükleyici Animasyonu */
-.loader {
-    position: fixed;
-    inset: 0;
-    background: var(--bg-primary);
-    z-index: 1000;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.5s;
-}
-.loader.is-active {
-    opacity: 1;
-    pointer-events: all;
-}
-.spinner {
-    width: 50px;
-    height: 50px;
-    border: 5px solid var(--border-color);
-    border-top-color: var(--accent-color);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-/* Giriş Ekranı */
-#loginScreen {
-    justify-content: center;
-    align-items: center;
-}
-.login-container {
-    padding: 2.5rem;
-    background: var(--bg-secondary);
-    border-radius: 12px;
-    box-shadow: 0 10px 25px var(--shadow-color);
-    text-align: center;
-    max-width: 400px;
-    width: 90%;
-}
-.login-box h1 {
-    margin-bottom: 0.5rem;
-}
-.login-box p {
-    color: var(--text-secondary);
-    margin-bottom: 1.5rem;
-}
-.input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-#passwordInput {
-    padding: 12px 15px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    font-size: 1rem;
-    transition: border-color 0.3s, box-shadow 0.3s;
-}
-#passwordInput:focus {
-    outline: none;
-    border-color: var(--accent-color);
-    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3);
-}
-#passwordInput.shake {
-    animation: shake 0.5s;
-}
-@keyframes shake {
-    10%, 90% { transform: translateX(-1px); }
-    20%, 80% { transform: translateX(2px); }
-    30%, 50%, 70% { transform: translateX(-4px); }
-    40%, 60% { transform: translateX(4px); }
-}
-#loginBtn {
-    padding: 12px 20px;
-    border-radius: 8px;
-    background: var(--accent-color);
-    color: #fff;
-    border: none;
-    cursor: pointer;
-    font-weight: bold;
-    transition: background-color 0.2s;
-}
-#loginBtn:hover {
-    background: var(--accent-hover);
-}
-.error-message {
-    color: var(--error-color);
-    height: 20px;
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-.error-message.show {
-    opacity: 1;
-}
-
-/* Galeri Ekranı */
+/* --- Topbar (Üst Bar) --- */
 .topbar {
     position: sticky;
     top: 0;
     padding: 1rem;
     background: color-mix(in srgb, var(--bg-secondary) 80%, transparent);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -211,7 +110,7 @@ body {
     white-space: nowrap;
 }
 
-/* Dinamik Grid (Masonry) Düzeni */
+/* --- Dinamik Grid (Masonry) Düzeni --- */
 .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -234,28 +133,37 @@ body {
     transform: scale(1.03);
     box-shadow: 0 15px 30px var(--shadow-color);
 }
+.card:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+}
 .card img, .card video {
     width: 100%;
     height: 100%;
     display: block;
     object-fit: cover;
 }
-.card .play-icon {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 3rem;
-    color: rgba(255, 255, 255, 0.8);
-    pointer-events: none;
-    opacity: 1;
-    transition: opacity 0.3s;
-}
-.card:hover .play-icon {
-    opacity: 0;
+
+/* Tarih Gruplaması Başlığı */
+.grid-header {
+    grid-column: 1 / -1; 
+    padding: 2rem 0 1rem 0;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1rem;
 }
 
-/* Lightbox */
+/* Arama Sonucu Bulunamadığında Gösterilecek Mesaj */
+.grid-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 4rem;
+    color: var(--text-secondary);
+}
+
+/* --- Lightbox (Görüntüleyici) --- */
 .lightbox {
     position: fixed;
     inset: 0;
@@ -303,10 +211,17 @@ body {
     font-size: 1.2rem;
     cursor: pointer;
     transition: background-color 0.2s, color 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-decoration: none;
 }
 .lb-button:hover {
     background-color: #fff;
     color: #000;
+}
+.lb-button svg {
+    pointer-events: none;
 }
 .lb-nav {
     position: fixed;
@@ -318,22 +233,33 @@ body {
     border-radius: 50%;
     width: 44px;
     height: 44px;
-    font-size: 1.5rem;
+    font-size: 2.5rem;
+    font-weight: 100;
+    line-height: 44px; /* Dikey hizalama için */
+    text-align: center;
     cursor: pointer;
     z-index: 101;
     transition: transform 0.2s;
+    -webkit-user-select: none; /* Metin seçilmesini engelle */
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 .lb-nav:hover {
     transform: translateY(-50%) scale(1.1);
 }
-.lb-nav.prev { left: 1.5rem; }
-.lb-nav.next { right: 1.5rem; }
+.lb-nav.prev { left: 1.5rem; padding-right: 3px;}
+.lb-nav.next { right: 1.5rem; padding-left: 3px;}
 .lb-content {
     width: 100%;
     height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
+    transition: opacity 0.2s ease-in-out;
+}
+.lb-content.is-loading {
+    opacity: 0.5;
 }
 .lb-content img, .lb-content video {
     max-width: 95vw;
@@ -342,7 +268,7 @@ body {
     border-radius: 4px;
 }
 
-/* Yukarı Çık Butonu */
+/* --- Yukarı Çık Butonu --- */
 .scroll-to-top {
     position: fixed;
     bottom: 20px;
@@ -367,7 +293,7 @@ body {
     transform: translateY(0);
 }
 
-/* Mobil Uyum */
+/* --- Mobil Uyum (Responsive) --- */
 @media (max-width: 768px) {
     .grid {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -375,9 +301,14 @@ body {
     .topbar {
         flex-direction: column;
         padding: 0.5rem;
+        gap: .5rem;
     }
     .lb-nav {
         top: auto;
         bottom: 1rem;
+        transform: none;
+    }
+    .lb-nav:hover {
+        transform: scale(1.1);
     }
 }
