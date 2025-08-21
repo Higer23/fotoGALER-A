@@ -1,134 +1,165 @@
-/* Genel Tasarım */
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: Arial, sans-serif; background-color: #111; color: #fff; }
+/* ===================================================================
+   STYLE.CSS — Modern, dark-first, responsive, accessible gallery
+   =================================================================== */
 
-body.theme-light {
-  background-color: #f7f7f7;
-  color: #000;
+/* ---- Variables ---- */
+:root{
+  --bg: #0b0f14;
+  --bg-elev: #0f1720;
+  --card: #11161b;
+  --fg: #e6eef8;
+  --muted: #92a0b3;
+  --accent: #60a5fa;
+  --radius: 12px;
+  --shadow: 0 12px 36px rgba(0,0,0,0.55);
+
+  --grid-row: 6px; /* küçük hücre yüksekliği: hassas masonry */
 }
 
-.hidden { display: none; }
-
-h2 {
-  font-size: 1.5rem;
-  color: #fff;
-  text-align: center;
+/* Light theme */
+body.theme-light{
+  --bg: #f7fafc;
+  --bg-elev: #ffffff;
+  --card: #ffffff;
+  --fg: #0b1220;
+  --muted: #425466;
+  --accent: #2563eb;
+  --shadow: 0 12px 36px rgba(2,6,23,0.06);
 }
 
-/* Şifre Ekranı */
-.login-screen {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background-color: #222;
+*{ box-sizing: border-box }
+html,body{ height:100% }
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+  -webkit-text-size-adjust:100%;
 }
 
-input[type="password"] {
-  padding: 10px;
-  margin: 10px;
-  background-color: #333;
-  border: 1px solid #555;
-  color: #fff;
-  border-radius: 5px;
-  width: 80%;
+/* ---- Topbar ---- */
+.topbar{
+  position: sticky; top:0; z-index: 30;
+  background: linear-gradient(180deg, rgba(10,12,16,0.9), rgba(10,12,16,0.6));
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  backdrop-filter: blur(6px);
+}
+.topbar-inner{
+  max-width: 1280px; margin-inline:auto; padding:12px;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+}
+.brand{ display:flex; align-items:center; gap:8px; font-weight:700 }
+.brand-emoji{ font-size:20px }
+.brand-text{ font-size:1.05rem }
+
+/* Controls */
+.controls{ display:flex; align-items:center; gap:10px }
+.filter-row{ display:flex; gap:8px; align-items:center }
+.chip{
+  border-radius:999px; padding:8px 12px; font-size:0.95rem;
+  background:transparent; color:var(--fg); border:1px solid rgba(255,255,255,0.04);
+  cursor:pointer;
+}
+.chip.is-active{ background:var(--accent); color:#fff; border-color:transparent }
+.search-wrap{ min-width:200px }
+.search{ width:100%; padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,0.04);
+  background: rgba(255,255,255,0.02); color:var(--fg); outline:none; transition: box-shadow .15s ease;
+}
+.search::placeholder{ color: var(--muted) }
+.btn{ height:38px; padding:0 10px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background:transparent; color:var(--fg); cursor:pointer; }
+.btn.primary{ background:var(--accent); color:#fff; border-color:transparent }
+
+/* ---- Grid (masonry-like) ---- */
+.container{ max-width:1280px; margin-inline:auto; padding:min(16px,4vw) }
+.grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-auto-rows: var(--grid-row);
+  gap: 12px;
 }
 
-button {
-  padding: 10px 20px;
-  background-color: #60a5fa;
-  border: none;
-  color: #fff;
-  border-radius: 5px;
-  cursor: pointer;
+/* Card */
+.card{
+  position:relative; display:block; overflow:hidden; border-radius:var(--radius);
+  background:var(--card); border:1px solid rgba(255,255,255,0.03);
+  box-shadow: var(--shadow); transform: translateZ(0);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.card:focus-visible{ outline: 2px solid var(--accent); outline-offset: 3px }
+.card:hover{ transform: translateY(-6px); box-shadow: 0 18px 46px rgba(0,0,0,0.6); }
+
+/* Media inside card */
+.card__media{
+  display:block; width:100%; height:auto; object-fit:cover; object-position:center center;
+  background: linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.06));
+  transition: transform .22s ease, filter .22s ease, opacity .22s ease;
 }
 
-button:hover { background-color: #4c8bc5; }
+/* Badge (video + duration) */
+.card__badge{
+  position:absolute; left:10px; bottom:10px; background: rgba(0,0,0,0.5); color:#fff;
+  padding:6px 10px; border-radius:999px; font-size:0.85rem;
+  display:flex; gap:8px; align-items:center; pointer-events:none;
+}
+.card__badge .dot{ width:8px; height:8px; background:#fff; border-radius:50% }
 
-/* Hata mesajı */
-.error-message {
-  color: red;
-  display: none;
-  margin-top: 10px;
+/* Placeholder style (arka planla aynı) */
+.card.placeholder{
+  background: transparent;
+  border: 1px solid transparent;
+  box-shadow: none;
+}
+.card.placeholder .card__media{
+  background: transparent;
+  opacity: 0;
+  min-height: 120px;
 }
 
-/* Galeri */
-.gallery {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
-  padding: 20px;
+/* On hover of placeholder show "Yakında" */
+.card.placeholder::after{
+  content: "";
+  position:absolute; inset:0; background:transparent; pointer-events:none;
+}
+.card.placeholder:hover::after,
+.card.placeholder:focus-visible::after{
+  content: attr(data-placeholder); /* içerik JS tarafından set edilir: "📷 Yakında" veya "🎬 Yakında" */
+  display:flex; align-items:center; justify-content:center;
+  color:var(--fg); font-weight:600; font-size:1.05rem;
+  background: rgba(0,0,0,0.65); border-radius:inherit;
+  text-align:center; padding:8px;
 }
 
-.gallery-item {
-  margin: 10px;
-  position: relative;
+/* ---- Lightbox ---- */
+.lightbox{
+  position:fixed; inset:0; display:grid; grid-template-rows:auto 1fr auto; z-index:80;
+  background: rgba(4,6,8,0.9); opacity:0; pointer-events:none; transition: opacity .32s ease;
 }
+.lightbox:not(.is-hidden){ opacity:1; pointer-events:auto }
+.lb-top{ display:flex; justify-content:flex-end; padding:12px }
+.lb-stage{ display:grid; place-items:center; padding:12px; min-height:60vh }
+.lb-stage img, .lb-stage video{ max-width: min(96vw,1400px); max-height: 86vh; border-radius:14px; background:#000; box-shadow:0 24px 80px rgba(0,0,0,0.6) }
+.lb-bottom{ display:grid; grid-template-columns:56px 1fr 56px; align-items:center; gap:12px; padding:12px }
+.lb-meta{ position: absolute; bottom:18px; left:50%; transform:translateX(-50%); background: rgba(0,0,0,0.45); padding:6px 10px; border-radius:10px; color:#fff; font-size:0.9rem }
 
-.gallery-item img, .gallery-item video {
-  width: 200px;
-  height: 200px;
-  object-fit: cover;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: transform 0.3s ease;
+/* Loader */
+.lb-loader{ width:56px; height:56px; border-radius:50%; border:5px solid rgba(255,255,255,0.12); border-top-color:var(--accent); animation:spin 1s linear infinite }
+@keyframes spin{ to{ transform: rotate(360deg) } }
+
+/* Dialog */
+.dialog{ position:fixed; inset:0; display:grid; place-items:center; z-index:90; background: rgba(0,0,0,0.5); opacity:0; pointer-events:none; transition:opacity .16s ease }
+.dialog:not(.is-hidden){ opacity:1; pointer-events:auto }
+.dialog-card{ width:min(680px,94vw); background:var(--bg-elev); border-radius:12px; padding:0; border:1px solid rgba(255,255,255,0.03); box-shadow:var(--shadow) }
+.dialog-head{ display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:1px solid rgba(255,255,255,0.03) }
+.dialog-body{ padding:14px; color:var(--muted) }
+.dialog-foot{ padding:12px 14px; display:flex; justify-content:flex-end; gap:8px }
+
+/* Responsive tweaks */
+@media (max-width: 900px){
+  .grid{ grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) }
 }
-
-.gallery-item img:hover, .gallery-item video:hover {
-  transform: scale(1.05);
+@media (max-width: 560px){
+  .topbar-inner{ flex-direction:column; align-items:flex-start; gap:10px }
+  .controls{ width:100%; justify-content:space-between }
+  .grid{ grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap:10px }
+  .lb-stage{ padding:8px }
+  .lb-stage img, .lb-stage video{ max-height: 76vh }
 }
-
-.gallery-item.placeholder {
-  background: #333;
-  width: 200px;
-  height: 200px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: #fff;
-  border-radius: 8px;
-}
-
-.placeholder-text {
-  font-size: 1.2rem;
-  font-weight: bold;
-}
-
-/* Lightbox */
-.lightbox {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.9);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 100;
-}
-
-.lightbox-image, .lightbox-video {
-  max-width: 90%;
-  max-height: 90%;
-  border-radius: 10px;
-}
-
-#lbClose {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background-color: rgba(255, 255, 255, 0.7);
-  color: #000;
-  border: none;
-  padding: 10px;
-  border-radius: 50%;
-  font-size: 20px;
-  cursor: pointer;
-}
-
-#lbClose:hover {
-  background-color: rgba(255, 255, 255, 0.9);
-  }
