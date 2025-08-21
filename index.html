@@ -1,69 +1,92 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Fotoğraf ve Video Galerisi</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="description" content="Profesyonel, responsive fotoğraf & video galeri. 100 fotoğraf + 30 video destekli; otomatik video kapak üretimi; placeholder kutular; tam ekran; swipe; lazy load." />
+  <title>Profesyonel Foto & Video Galeri</title>
+
+  <!-- Stil -->
   <link rel="stylesheet" href="style.css">
+
+  <!-- Favicon (inline small SVG) -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ctext y='20' x='1' font-size='18'%3E📷%3C/text%3E%3C/svg%3E">
+
+  <!-- Script (defer) -->
   <script src="script.js" defer></script>
 </head>
 <body class="theme-dark">
 
-  <!-- Şifre Ekranı -->
-  <div id="loginScreen" class="login-screen">
-    <h2>Giriş Yap</h2>
-    <label for="password">Şifre:</label>
-    <input type="password" id="password" placeholder="Şifreyi girin">
-    <button id="loginBtn" class="btn">Giriş Yap</button>
-    <div id="error" class="error-message">Yanlış şifre! Lütfen tekrar deneyin.</div>
+  <!-- ===== Topbar ===== -->
+  <header class="topbar" role="banner">
+    <div class="topbar-inner">
+      <h1 class="brand" aria-label="Galeri Anasayfa">
+        <span class="brand-emoji" aria-hidden="true">📷</span>
+        <span class="brand-text">Galeri</span>
+      </h1>
+
+      <div class="controls" role="toolbar" aria-label="Araçlar">
+        <div class="filter-row" role="group" aria-label="Filtreler">
+          <button class="chip is-active" data-filter="all" aria-pressed="true">Hepsi</button>
+          <button class="chip" data-filter="photo" aria-pressed="false">Fotoğraflar</button>
+          <button class="chip" data-filter="video" aria-pressed="false">Videolar</button>
+        </div>
+
+        <div class="search-wrap" role="search">
+          <input id="searchInput" class="search" type="search" placeholder="Ara (örn: f4, v12)" aria-label="Galeri ara" />
+        </div>
+
+        <button id="btnTheme" class="btn ghost" aria-label="Temayı değiştir">🌓</button>
+        <button id="btnAbout" class="btn ghost" aria-haspopup="dialog" aria-controls="aboutDialog" aria-label="Hakkında">ℹ️</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== Main: Grid ===== -->
+  <main id="main" class="container" role="main">
+    <section class="section" aria-label="Medya Galerisi">
+      <div id="grid" class="grid" role="list" aria-live="polite" aria-busy="false"></div>
+    </section>
+  </main>
+
+  <!-- ===== Lightbox / Fullscreen ===== -->
+  <div id="lightbox" class="lightbox is-hidden" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="lbTitle" aria-describedby="lbDesc">
+    <div class="lb-top">
+      <button id="lbClose" class="iconbtn" aria-label="Kapat (Esc)">✕</button>
+    </div>
+
+    <div id="lbStage" class="lb-stage">
+      <div id="lbLoader" class="lb-loader" aria-hidden="true"></div>
+    </div>
+
+    <div class="lb-bottom">
+      <button id="lbPrev" class="iconbtn" aria-label="Önceki (←)">←</button>
+      <div id="lbTitle" class="lb-title">Medya</div>
+      <button id="lbNext" class="iconbtn" aria-label="Sonraki (→)">→</button>
+    </div>
+    <div id="lbMeta" class="lb-meta" aria-live="polite"></div>
   </div>
 
-  <!-- Galeri -->
-  <div id="gallery" class="gallery hidden">
-    <header class="topbar">
-      <div class="brand">
-        <span class="brand-emoji">📷</span>
-        <span class="brand-text">Galeri</span>
+  <!-- ===== About Dialog ===== -->
+  <div id="aboutDialog" class="dialog is-hidden" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="aboutTitle">
+    <div class="dialog-card">
+      <div class="dialog-head">
+        <h2 id="aboutTitle">Galeri Hakkında</h2>
+        <button id="aboutClose" class="iconbtn" aria-label="Kapat">✕</button>
       </div>
-    </header>
-
-    <div class="gallery-grid">
-      <!-- Fotoğraflar -->
-      <div class="gallery-item" data-type="image" data-index="1">
-        <img src="images/f1.jpg" alt="Fotoğraf 1" onclick="openLightbox(0)">
+      <div class="dialog-body">
+        <p>Bu galeri; 100 fotoğraf + 30 video desteğiyle responsive, lazy-loading, otomatik video kapak üretimi (harici poster gerektirmez), placeholder kutular, masonry-benzeri düzen, tam ekran, klavye ve swipe navigasyonu sunar.</p>
+        <p>Kullanım: Kartlara tıklayın veya mobilde kaydırın. ESC ile çıkın. ← / → ile gezin.</p>
       </div>
-      <div class="gallery-item" data-type="image" data-index="2">
-        <img src="images/f2.jpg" alt="Fotoğraf 2" onclick="openLightbox(1)">
-      </div>
-      <!-- (Sonraki fotoğraflar f3.jpg - f100.jpg arası) -->
-      <div class="gallery-item placeholder" data-type="image" data-index="100">
-        <div class="placeholder-text">📷 Yakında</div>
-      </div>
-
-      <!-- Videolar -->
-      <div class="gallery-item" data-type="video" data-index="1">
-        <video src="videos/v1.mp4" onclick="openLightbox(101)">
-          <div class="placeholder-text">🎬 Yakında</div>
-        </video>
-      </div>
-      <div class="gallery-item" data-type="video" data-index="2">
-        <video src="videos/v2.mp4" onclick="openLightbox(102)">
-          <div class="placeholder-text">🎬 Yakında</div>
-        </video>
-      </div>
-      <!-- (Sonraki videolar v3.mp4 - v50.mp4 arası) -->
-      <div class="gallery-item placeholder" data-type="video" data-index="50">
-        <div class="placeholder-text">🎬 Yakında</div>
+      <div class="dialog-foot">
+        <button id="aboutOk" class="btn primary">Tamam</button>
       </div>
     </div>
   </div>
 
-  <!-- Lightbox (Tam Ekran) -->
-  <div id="lightbox" class="lightbox">
-    <button id="lbClose" class="btn">✕</button>
-    <img id="lbImage" class="lightbox-image" />
-    <video id="lbVideo" class="lightbox-video" controls></video>
-  </div>
+  <noscript>
+    Bu galeri JavaScript gerektirir. Lütfen tarayıcınızda JavaScript'i etkinleştirin.
+  </noscript>
 
 </body>
-    </html>
+</html>
