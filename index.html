@@ -1,59 +1,69 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Profesyonel Foto & Video Galeri</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Fotoğraf ve Video Galerisi</title>
   <link rel="stylesheet" href="style.css">
   <script src="script.js" defer></script>
 </head>
 <body class="theme-dark">
 
-  <!-- Şifre Girişi Alanı -->
-  <div id="passwordBox" class="password-box">
-    <h2>Şifreyi Giriniz</h2>
-    <input type="password" id="passwordInput" placeholder="Şifreyi girin" />
-    <button onclick="checkPassword()">Giriş</button>
-    <div id="error" class="error-message"></div>
+  <!-- Şifre Ekranı -->
+  <div id="loginScreen" class="login-screen">
+    <h2>Giriş Yap</h2>
+    <label for="password">Şifre:</label>
+    <input type="password" id="password" placeholder="Şifreyi girin">
+    <button id="loginBtn" class="btn">Giriş Yap</button>
+    <div id="error" class="error-message">Yanlış şifre! Lütfen tekrar deneyin.</div>
   </div>
 
-  <!-- Ana İçerik -->
-  <div id="content" style="display:none;">
-    <header class="topbar" role="banner">
-      <div class="topbar-inner">
-        <h1 class="brand">
-          <span class="brand-emoji">📷</span><span class="brand-text">Galeri</span>
-        </h1>
-        <div class="controls">
-          <div class="filter-row">
-            <button class="chip is-active" data-filter="all" aria-pressed="true">Hepsi</button>
-            <button class="chip" data-filter="photo" aria-pressed="false">Fotoğraflar</button>
-            <button class="chip" data-filter="video" aria-pressed="false">Videolar</button>
-            <button class="chip" data-filter="featured" aria-pressed="false">Öne Çıkanlar</button>
-          </div>
-          <input id="searchInput" class="search" type="search" placeholder="Ara..." />
-          <button id="btnTheme" class="btn">🌓</button>
-        </div>
+  <!-- Galeri -->
+  <div id="gallery" class="gallery hidden">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-emoji">📷</span>
+        <span class="brand-text">Galeri</span>
       </div>
     </header>
 
-    <main id="main" class="container">
-      <section class="section">
-        <div id="grid" class="grid"></div>
-      </section>
-      <button id="loadMoreBtn" class="load-more-btn">Daha Fazla Yükle</button>
-    </main>
-
-    <div id="lightbox" class="lightbox is-hidden" role="dialog" aria-modal="true">
-      <div class="lb-top"><button id="lbClose" class="iconbtn">✕</button></div>
-      <div id="lbStage" class="lb-stage"><div id="lbLoader" class="lb-loader"></div></div>
-      <div class="lb-bottom">
-        <button id="lbPrev" class="iconbtn">←</button>
-        <div class="lb-title">Medya</div>
-        <button id="lbNext" class="iconbtn">→</button>
+    <div class="gallery-grid">
+      <!-- Fotoğraflar -->
+      <div class="gallery-item" data-type="image" data-index="1">
+        <img src="images/f1.jpg" alt="Fotoğraf 1" onclick="openLightbox(0)">
       </div>
-      <div id="lbMeta" class="lb-meta"></div>
+      <div class="gallery-item" data-type="image" data-index="2">
+        <img src="images/f2.jpg" alt="Fotoğraf 2" onclick="openLightbox(1)">
+      </div>
+      <!-- (Sonraki fotoğraflar f3.jpg - f100.jpg arası) -->
+      <div class="gallery-item placeholder" data-type="image" data-index="100">
+        <div class="placeholder-text">📷 Yakında</div>
+      </div>
+
+      <!-- Videolar -->
+      <div class="gallery-item" data-type="video" data-index="1">
+        <video src="videos/v1.mp4" onclick="openLightbox(101)">
+          <div class="placeholder-text">🎬 Yakında</div>
+        </video>
+      </div>
+      <div class="gallery-item" data-type="video" data-index="2">
+        <video src="videos/v2.mp4" onclick="openLightbox(102)">
+          <div class="placeholder-text">🎬 Yakında</div>
+        </video>
+      </div>
+      <!-- (Sonraki videolar v3.mp4 - v50.mp4 arası) -->
+      <div class="gallery-item placeholder" data-type="video" data-index="50">
+        <div class="placeholder-text">🎬 Yakında</div>
+      </div>
     </div>
   </div>
+
+  <!-- Lightbox (Tam Ekran) -->
+  <div id="lightbox" class="lightbox">
+    <button id="lbClose" class="btn">✕</button>
+    <img id="lbImage" class="lightbox-image" />
+    <video id="lbVideo" class="lightbox-video" controls></video>
+  </div>
+
 </body>
-</html>
+    </html>
