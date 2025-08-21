@@ -1,171 +1,64 @@
-document.addEventListener("DOMContentLoaded",()=>{
-  const grid=document.getElementById("grid");
-  const lightbox=document.getElementById("lightbox");
-  const lbContent=document.getElementById("lbContent");
-  const lbClose=document.getElementById("lbClose");
-  const lbPrev=document.getElementById("lbPrev");
-  const lbNext=document.getElementById("lbNext");
-  const themeBtn=document.getElementById("btnTheme");
-  const searchInput=document.getElementById("searchInput");
-  const chips=document.querySelectorAll(".chip");
+const $=(s,d=document)=>d.querySelector(s);
+const $$=(s,d=document)=>Array.from(d.querySelectorAll(s));
+const PHOTOS=100,VIDEOS=30;
+const media=[];
+for(let i=1;i<=PHOTOS;i++){media.push({type:'image',id:`f${i}`,src:`images/f${i}.jpg`,tags:[`f${i}`,'photo']});}
+for(let i=1;i<=VIDEOS;i++){media.push({type:'video',id:`v${i}`,src:`videos/v${i}.mp4`,tags:[`v${i}`,'video']});}
 
-  const photos=[
-    {type:"photo",src:"images/f1.jpg",title:"f1"},
-    {type:"photo",src:"images/f2.jpg",title:"f2"},
-    {type:"photo",src:"images/f3.jpg",title:"f3"},
-    {type:"photo",src:"images/f4.jpg",title:"f4"},
-    {type:"photo",src:"images/f5.jpg",title:"f5"},
-    {type:"photo",src:"images/f6.jpg",title:"f6"},
-    {type:"photo",src:"images/f7.jpg",title:"f7"},
-    {type:"photo",src:"images/f8.jpg",title:"f8"},
-    {type:"photo",src:"images/f9.jpg",title:"f9"},
-    {type:"photo",src:"images/f10.jpg",title:"f10"},
-    {type:"photo",src:"images/f11.jpg",title:"f11"},
-    {type:"photo",src:"images/f12.jpg",title:"f12"},
-    {type:"photo",src:"images/f13.jpg",title:"f13"},
-    {type:"photo",src:"images/f14.jpg",title:"f14"},
-    {type:"photo",src:"images/f15.jpg",title:"f15"},
-    {type:"photo",src:"images/f16.jpg",title:"f16"},
-    {type:"photo",src:"images/f17.jpg",title:"f17"},
-    {type:"photo",src:"images/f18.jpg",title:"f18"},
-    {type:"photo",src:"images/f19.jpg",title:"f19"},
-    {type:"photo",src:"images/f20.jpg",title:"f20"},
-    {type:"photo",src:"images/f21.jpg",title:"f21"},
-    {type:"photo",src:"images/f22.jpg",title:"f22"}
-  ];
+const gridEl=$('#grid');
+const filterBtns=$$('.chip');
+const searchInput=$('#searchInput');
+const lightbox=$('#lightbox');
+const lbStage=$('#lbStage');const lbLoader=$('#lbLoader');
+const lbClose=$('#lbClose');const lbPrev=$('#lbPrev');const lbNext=$('#lbNext');
+const lbTitle=$('.lb-title');const lbMeta=$('#lbMeta');
+const btnTheme=$('#btnTheme');
+let currentFilter='all',currentQuery='',currentIndex=-1;
 
-  const videos=[
-    {type:"video",src:"videos/v1.mp4",title:"v1"},
-    {type:"video",src:"videos/v2.mp4",title:"v2"},
-    {type:"video",src:"videos/v3.mp4",title:"v3"},
-    {type:"video",src:"videos/v4.mp4",title:"v4"},
-    {type:"video",src:"videos/v5.mp4",title:"v5"}
-  ];
+function createCard(item,index){
+  const a=document.createElement('a');a.className='card';a.href=`#/media/${index}`;a.dataset.index=index;a.dataset.type=item.type;
+  const mediaEl=document.createElement('img');mediaEl.className='card__media';mediaEl.alt=item.id;mediaEl.decoding='async';mediaEl.loading='lazy';
+  if(item.type==='image'){mediaEl.src=item.src;a.appendChild(mediaEl);}
+  else{mediaEl.src=transparentSVG();a.appendChild(mediaEl);}
+  a.addEventListener('click',e=>{e.preventDefault();location.hash=`#/media/${index}`;});
+  mediaEl.addEventListener('error',()=>{a.classList.add('placeholder');a.dataset.placeholder=item.type==='image'?'📷 Yakında':'🎬 Yakında';mediaEl.remove();a.style.minHeight='120px';computeRowSpan(a);},{once:true});
+  mediaEl.addEventListener('load',()=>computeRowSpan(a),{once:true});
+  return a;
+}
 
-  // placeholderlar (toplam 50 foto + 30 video)
-  const placeholders=[];
-  for(let i=23;i<=50;i++) placeholders.push({type:"photo",title:"f"+i,placeholder:true});
-  for(let i=6;i<=30;i++) placeholders.push({type:"video",title:"v"+i,placeholder:true});
+function transparentSVG(){return 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%2272%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23000%22/%3E%3C/svg%3E';}
 
-  let allItems=[...photos,...videos,...placeholders];
-  let currentIndex=0;
+function renderGrid(list){gridEl.setAttribute('aria-busy','true');gridEl.innerHTML='';const frag=document.createDocumentFragment();
+list.forEach((item,idx)=>frag.appendChild(createCard(item,idx)));gridEl.appendChild(frag);gridEl.setAttribute('aria-busy','false');idle(()=>$$('.card',gridEl).forEach(c=>computeRowSpan(c)));setupVideoThumbnails(list);}
+function computeRowSpan(card){const img=card.querySelector('.card__media');if(!img)return;const style=getComputedStyle(gridEl);const rowH=parseFloat(style.getPropertyValue('grid-auto-rows'))||6;const gap=parseFloat(style.getPropertyValue('gap'))||12;
+function setSpan(){const height=img.getBoundingClientRect().height;const span=Math.ceil((height+gap)/(rowH+gap));card.style.gridRowEnd=`span ${span}`;}
+if(img.complete&&img.naturalHeight!==0)setSpan();else{img.addEventListener('load',setSpan,{once:true});img.addEventListener('error',()=>{card.style.gridRowEnd=`span ${Math.ceil(180/rowH)}`},{once:true});}}
 
-  function renderGrid(items){
-    grid.innerHTML="";
-    items.forEach((item,index)=>{
-      const div=document.createElement("div");
-      div.className="card";
-      div.dataset.index=index;
-      if(item.placeholder){
-        div.classList.add("placeholder");
-        div.dataset.placeholder=item.type==="photo"?"📷 Yakında":"🎬 Yakında";
-      } else if(item.type==="photo"){
-        const img=document.createElement("img");
-        img.dataset.src=item.src;
-        img.alt=item.title;
-        img.loading="lazy";
-        div.appendChild(img);
-      } else if(item.type==="video"){
-        const vid=document.createElement("video");
-        vid.dataset.src=item.src;
-        vid.poster=`videos/posters/${item.title}.jpg`;
-        vid.muted=true;
-        vid.playsInline=true;
-        div.appendChild(vid);
-      }
-      grid.appendChild(div);
-    });
-    lazyLoad();
-  }
+function setupVideoThumbnails(list){const videoCards=$$('.card[data-type="video"]',gridEl);if(videoCards.length===0)return;
+const io=new IntersectionObserver((entries,obs)=>{entries.forEach(entry=>{if(!entry.isIntersecting)return;const card=entry.target;const idx=Number(card.dataset.index);const item=list[idx];const img=card.querySelector('img.card__media');const v=document.createElement('video');v.preload='auto';v.muted=true;v.playsInline=true;v.src=item.src;v.addEventListener('loadeddata',async()=>{try{v.currentTime=Math.min(0.15,(v.duration||1)*0.05);await new Promise(r=>v.addEventListener('seeked',r,{once:true}));const c=document.createElement('canvas');c.width=v.videoWidth||640;c.height=v.videoHeight||360;c.getContext('2d').drawImage(v,0,0,c.width,c.height);const dataURL=c.toDataURL('image/jpeg',0.7);if(img){img.src=dataURL;computeRowSpan(card);}}catch(e){}finally{obs.unobserve(card);}}, {once:true});v.load();});},{rootMargin:'200px 0px'});videoCards.forEach(c=>io.observe(c));}
 
-  function lazyLoad(){
-    const els=[...grid.querySelectorAll("img[data-src]"),...grid.querySelectorAll("video[data-src]")];
-    const observer=new IntersectionObserver(entries=>{
-      entries.forEach(entry=>{
-        if(entry.isIntersecting){
-          const el=entry.target;
-          el.src=el.dataset.src;
-          el.removeAttribute("data-src");
-          observer.unobserve(el);
-        }
-      });
-    },{rootMargin:"200px"});
-    els.forEach(el=>observer.observe(el));
-  }
+function applyFilters(){const q=currentQuery.trim().toLowerCase();const filtered=media.filter(m=>{if(currentFilter!=='all'&&m.type!==currentFilter)return false;if(!q)return true;return m.id.toLowerCase().includes(q)||(m.tags||[]).some(t=>t.toLowerCase().includes(q));});renderGrid(filtered);}
+filterBtns.forEach(btn=>btn.addEventListener('click',()=>{filterBtns.forEach(b=>{b.classList.remove('is-active');b.setAttribute('aria-pressed','false');});btn.classList.add('is-active');btn.setAttribute('aria-pressed','true');currentFilter=btn.dataset.filter;applyFilters();}));
+let searchTimer=null;searchInput.addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{currentQuery=searchInput.value;applyFilters();},180);});
 
-  grid.addEventListener("click",(e)=>{
-    const card=e.target.closest(".card");
-    if(!card || card.classList.contains("placeholder")) return;
-    currentIndex=+card.dataset.index;
-    showLightbox(currentIndex);
-  });
+function openLightbox(index,pushHash=true){index=Math.max(0,Math.min(media.length-1,index));currentIndex=index;lbStage.innerHTML='';lbStage.appendChild(lbLoader);lightbox.classList.remove('is-hidden');document.documentElement.style.overflow='hidden';const item=media[index];if(item.type==='image'){const img=new Image();img.className='fade-in';img.alt=item.id;img.decoding='async';img.src=item.src;img.addEventListener('load',()=>{lbStage.replaceChildren(img);lbTitle.textContent=`Fotoğraf • ${item.id}`;lbMeta.textContent='';},{once:true});img.addEventListener('error',()=>{lbStage.textContent='Görüntü yüklenemedi';lbTitle.textContent='Hata';},{once:true});}else{const v=document.createElement('video');v.controls=true;v.autoplay=false;v.playsInline=true;v.preload='metadata';v.src=item.src;v.addEventListener('loadedmetadata',()=>{lbStage.replaceChildren(v);lbTitle.textContent=`Video • ${item.id}`;lbMeta.textContent='';},{once:true});v.addEventListener('error',()=>{lbStage.textContent='Video yüklenemedi';lbTitle.textContent='Hata';},{once:true});}
+if(pushHash)location.hash=`#/media/${index}`;}
+function closeLightbox(popHash=true){const v=lbStage.querySelector('video');if(v)try{v.pause();}catch(e){}lightbox.classList.add('is-hidden');document.documentElement.style.overflow='';lbStage.innerHTML='';lbMeta.textContent='';if(popHash&&location.hash.startsWith('#/media/'))history.pushState('',document.title,window.location.pathname+window.location.search);}
+function prevItem(){if(currentIndex>=0)openLightbox((currentIndex-1+media.length)%media.length);}
+function nextItem(){if(currentIndex>=0)openLightbox((currentIndex+1)%media.length);}
+lbClose.addEventListener('click',()=>closeLightbox());lbPrev.addEventListener('click',prevItem);lbNext.addEventListener('click',nextItem);
+document.addEventListener('keydown',e=>{if(lightbox.classList.contains('is-hidden'))return;if(e.key==='Escape')closeLightbox();if(e.key==='ArrowLeft')prevItem();if(e.key==='ArrowRight')nextItem();},{passive:true});
+let touchStartX=0,touchLock=false;lightbox.addEventListener('touchstart',e=>{touchStartX=e.changedTouches[0].clientX;touchLock=false;},{passive:true});
+lightbox.addEventListener('touchmove',e=>{const dx=e.changedTouches[0].clientX-touchStartX;if(!touchLock)touchLock=Math.abs(dx)>8;},{passive:true});
+lightbox.addEventListener('touchend',e=>{if(!touchLock)return;const dx=e.changedTouches[0].clientX-touchStartX;if(dx>50)prevItem();else if(dx<-50)nextItem();},{passive:true});
+function handleHash(){const h=location.hash||'';if(h.startsWith('#/media/')){const idx=Number(h.replace('#/media/','').trim());if(Number.isInteger(idx)&&idx>=0&&idx<media.length){openLightbox(idx,false);return;}}if(!lightbox.classList.contains('is-hidden'))closeLightbox(false);}
+window.addEventListener('hashchange',handleHash);
 
-  function showLightbox(index){
-    lbContent.innerHTML="";
-    const item=allItems[index];
-    if(item.type==="photo"){
-      const img=document.createElement("img");
-      img.src=item.src;
-      lbContent.appendChild(img);
-    } else if(item.type==="video"){
-      const vid=document.createElement("video");
-      vid.src=item.src;
-      vid.controls=true;
-      vid.autoplay=true;
-      lbContent.appendChild(vid);
-    }
-    lightbox.classList.remove("is-hidden");
-  }
+function applyTheme(saved){const light=saved==='light';document.body.classList.toggle('theme-light',light);document.body.classList.toggle('theme-dark',!light);btnTheme.textContent=light?'☀️':'🌙';localStorage.setItem('gallery-theme',light?'light':'dark');}
+btnTheme.addEventListener('click',()=>{applyTheme(!document.body.classList.contains('theme-light')?'light':'dark');});
 
-  lbClose.addEventListener("click",()=>lightbox.classList.add("is-hidden"));
-  lbPrev.addEventListener("click",()=>{
-    currentIndex=(currentIndex-1+allItems.length)%allItems.length;
-    showLightbox(currentIndex);
-  });
-  lbNext.addEventListener("click",()=>{
-    currentIndex=(currentIndex+1)%allItems.length;
-    showLightbox(currentIndex);
-  });
-  document.addEventListener("keydown",e=>{
-    if(lightbox.classList.contains("is-hidden")) return;
-    if(e.key==="Escape") lightbox.classList.add("is-hidden");
-    if(e.key==="ArrowLeft") lbPrev.click();
-    if(e.key==="ArrowRight") lbNext.click();
-  });
+function boot(){const theme=localStorage.getItem('gallery-theme')||'dark';applyTheme(theme==='light'?'light':'dark');currentFilter='all';currentQuery='';applyFilters();let rid=0;window.addEventListener('resize',()=>{cancelAnimationFrame(rid);rid=requestAnimationFrame(()=>$$('.card',gridEl).forEach(c=>computeRowSpan(c)));},{passive:true});handleHash();}
+document.addEventListener('DOMContentLoaded',boot);
 
-  // Filter
-  chips.forEach(chip=>{
-    chip.addEventListener("click",()=>{
-      chips.forEach(c=>c.classList.remove("is-active"));
-      chip.classList.add("is-active");
-      const filter=chip.dataset.filter;
-      const filtered=filter==="all"?allItems:allItems.filter(i=>i.type===filter);
-      renderGrid(filtered);
-    });
-  });
-
-  // Search
-  searchInput.addEventListener("input",()=>{
-    const term=searchInput.value.toLowerCase();
-    const filtered=allItems.filter(i=>i.title.toLowerCase().includes(term));
-    renderGrid(filtered);
-  });
-
-  // Theme toggle
-  themeBtn.addEventListener("click",()=>{
-    document.body.classList.toggle("theme-dark");
-    document.body.classList.toggle("theme-light");
-  });
-
-  renderGrid(allItems);
-
-  // Yeni foto ekleme fonksiyonu
-  window.addPhoto=(photoObj)=>{
-    // placeholder kaldır
-    allItems=allItems.map(i=>{
-      if(i.placeholder && i.title===photoObj.title) return photoObj;
-      return i;
-    });
-    renderGrid(allItems);
-  };
-});
+function idle(fn){('requestIdleCallback'in window)?requestIdleCallback(fn):setTimeout(fn,1);}
+function humanDuration(sec){if(!isFinite(sec))return'';const m=Math.floor(sec/60);const s=Math.round(sec%60);return `${m}:${String(s).padStart(2,'0')}`;}
