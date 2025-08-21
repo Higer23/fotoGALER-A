@@ -1,4 +1,4 @@
-        document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
   const grid = document.getElementById("grid");
   const lightbox = document.getElementById("lightbox");
   const lbContent = document.getElementById("lbContent");
