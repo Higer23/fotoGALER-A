@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", () => {
+        document.addEventListener("DOMContentLoaded", () => {
   const grid = document.getElementById("grid");
   const lightbox = document.getElementById("lightbox");
   const lbContent = document.getElementById("lbContent");
@@ -80,7 +80,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     lazyLoad();
 
-    // Arama sonuç sayısını güncelle
     if (resultCount) {
       if (items.length > 0) {
         resultCount.textContent = `${items.length} sonuç bulundu`;
@@ -129,6 +128,15 @@ document.addEventListener("DOMContentLoaded", () => {
     lightbox.classList.remove("is-hidden");
   }
 
+  function handlePrevNext() {
+    const navButtons = document.querySelectorAll(".lb-nav");
+    if (navButtons.length > 0) {
+      navButtons.forEach(btn => {
+        btn.style.display = currentItems.length > 1 ? "flex" : "none";
+      });
+    }
+  }
+
   lbClose.addEventListener("click", () => lightbox.classList.add("is-hidden"));
   lbPrev.addEventListener("click", () => {
     currentIndex = (currentIndex - 1 + currentItems.length) % currentItems.length;
@@ -157,37 +165,27 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Filtreleme işlevi
   chips.forEach(chip => {
     chip.addEventListener("click", () => {
       chips.forEach(c => c.classList.remove("is-active"));
       chip.classList.add("is-active");
       const filter = chip.dataset.filter;
-
-      // Arama kutusunu temizle
       searchInput.value = "";
-
       const filtered = filter === "all" ? allItems : allItems.filter(i => i.type === filter);
       currentItems = filtered;
       renderGrid(filtered);
+      handlePrevNext();
     });
   });
 
-  // Arama işlevi
   searchInput.addEventListener("input", (e) => {
     const searchTerm = e.target.value.toLowerCase();
-    
-    // Aktif olan filtre çipini bul ve filtrele
     const activeFilter = document.querySelector('.chip.is-active').dataset.filter;
     let filteredItems = activeFilter === 'all' ? allItems : allItems.filter(item => item.type === activeFilter);
-    
-    // Arama terimine göre filtrele
-    const searchedItems = filteredItems.filter(item =>
-      item.title.toLowerCase().includes(searchTerm)
-    );
-    
+    const searchedItems = filteredItems.filter(item => item.title.toLowerCase().includes(searchTerm));
     currentItems = searchedItems;
     renderGrid(currentItems);
+    handlePrevNext();
   });
 
   themeBtn.addEventListener("click", () => {
@@ -220,4 +218,5 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   
   renderGrid(allItems);
+  handlePrevNext();
 });
