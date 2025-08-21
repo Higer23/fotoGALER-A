@@ -1,453 +1,243 @@
-/* =================================================================================
-   SCRIPT.JS — Gallery engine
-   - 100 fotoğraf + 30 video
-   - placeholder kutular (dosya yoksa arkaplanla aynı görünür; hover'da "Yakında")
-   - otomatik video poster üretimi (ilk kareden canvas -> dataURL)
-   - masonry-like grid: CSS grid-auto-rows + JS grid-row-end hesaplama
-   - lightbox (hash routing #/media/:index), ESC, ←/→, swipe, aria
-   - filtre & arama
-   ================================================================================= */
+document.addEventListener("DOMContentLoaded", () => {
+    // DOM Elementleri
+    const loader = document.getElementById("loader");
+    const loginScreen = document.getElementById("loginScreen");
+    const galleryScreen = document.getElementById("galleryScreen");
+    const passwordInput = document.getElementById("passwordInput");
+    const loginBtn = document.getElementById("loginBtn");
+    const errorMessage = document.getElementById("errorMessage");
+    const grid = document.getElementById("grid");
+    const lightbox = document.getElementById("lightbox");
+    const lbContent = document.getElementById("lbContent");
+    const lbCaption = document.getElementById("lbCaption");
+    const lbClose = document.getElementById("lbClose");
+    const lbPrev = document.getElementById("lbPrev");
+    const lbNext = document.getElementById("lbNext");
+    const lbFullscreen = document.getElementById("lbFullscreen");
+    const themeBtn = document.getElementById("btnTheme");
+    const searchInput = document.getElementById("searchInput");
+    const resultCount = document.getElementById("resultCount");
+    const chips = document.querySelectorAll(".chip");
+    const scrollTopBtn = document.getElementById("scrollTopBtn");
 
-/* ---------------------- Helpers ---------------------- */
-const $ = (sel, ctx=document) => ctx.querySelector(sel);
-const $$ = (sel, ctx=document) => Array.from((ctx||document).querySelectorAll(sel));
-const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-const raf = (fn) => requestAnimationFrame(fn);
-const idle = (fn) => ('requestIdleCallback' in window) ? requestIdleCallback(fn) : setTimeout(fn, 1);
+    const correctPassword = "halil<3berra"; // Şifreniz
+    let allItems = [];
+    let currentItems = [];
+    let currentIndex = 0;
 
-function humanDuration(seconds){
-  if(!isFinite(seconds)) return '';
-  const m = Math.floor(seconds/60);
-  const s = Math.round(seconds%60);
-  return `${m}:${String(s).padStart(2,'0')}`;
-}
-
-/* ---------------------- Manifest ---------------------- */
-// Bilinen ölçüler (kullanıcı verdi)
-const knownDims = {
-  f1:  { w:2418, h:2870 },
-  f2:  { w:2235, h:2586 },
-  f3:  { w:1777, h:2808 },
-  f4:  { w:2078, h:20232 } // olağanüstü uzun örnek
-  // f5..f100 bilinmiyor -> natural ölçü yüklendiğinde okunacak
-};
-
-// Build media array: 100 photos, 30 videos
-const PHOTOS = 100;
-const VIDEOS = 30;
-
-const media = [];
-
-// push photos
-for(let i=1;i<=PHOTOS;i++){
-  const id = `f${i}`;
-  const dim = knownDims[id] || null;
-  media.push({
-    type: 'image',
-    id,
-    src: `images/${id}.jpg`,
-    w: dim?.w,
-    h: dim?.h,
-    tags: [id,'photo']
-  });
-}
-
-// push videos
-for(let i=1;i<=VIDEOS;i++){
-  const id = `v${i}`;
-  media.push({
-    type: 'video',
-    id,
-    src: `videos/${id}.mp4`,
-    // poster: none; will be auto-generated
-    duration: undefined,
-    tags: [id,'video']
-  });
-}
-
-/* ---------------------- DOM refs ---------------------- */
-const gridEl = $('#grid');
-const filterBtns = $$('.chip');
-const searchInput = $('#searchInput');
-
-const lightbox = $('#lightbox');
-const lbStage = $('#lbStage');
-const lbLoader = $('#lbLoader');
-const lbClose = $('#lbClose');
-const lbPrev = $('#lbPrev');
-const lbNext = $('#lbNext');
-const lbTitle = $('.lb-title');
-const lbMeta = $('#lbMeta');
-
-const btnTheme = $('#btnTheme');
-const btnAbout = $('#btnAbout');
-const aboutDialog = $('#aboutDialog');
-const aboutClose = $('#aboutClose');
-const aboutOk = $('#aboutOk');
-
-let currentFilter = 'all';
-let currentQuery = '';
-let currentIndex = -1;
-
-/* ---------------------- Create card ---------------------- */
-function createCard(item, index){
-  const a = document.createElement('a');
-  a.className = 'card';
-  a.setAttribute('role','listitem');
-  a.setAttribute('aria-label', `${item.type === 'image'? 'Fotoğraf':'Video'} ${item.id}`);
-  a.href = `#/media/${index}`;
-  a.dataset.index = String(index);
-  a.dataset.type = item.type;
-
-  // media slot
-  const mediaEl = document.createElement('img');
-  mediaEl.className = 'card__media';
-  mediaEl.alt = item.id;
-  mediaEl.decoding = 'async';
-  mediaEl.loading = 'lazy';
-
-  // If image
-  if(item.type === 'image'){
-    mediaEl.src = item.src;
-    if(item.w && item.h){
-      mediaEl.width = item.w;
-      mediaEl.height = item.h;
-      a.dataset.w = String(item.w);
-      a.dataset.h = String(item.h);
+    // --- VERİ OLUŞTURMA ---
+    function generateData() {
+        const photos = Array.from({ length: 60 }, (_, i) => ({
+            type: "photo",
+            src: `images/f${i + 1}.jpg`,
+            title: `f${i + 1}.jpg`
+        }));
+        const videos = Array.from({ length: 25 }, (_, i) => ({
+            type: "video",
+            src: `videos/v${i + 1}.mp4`,
+            poster: `videos/posters/v${i + 1}.jpg`,
+            title: `v${i + 1}.mp4`
+        }));
+        allItems = [...photos, ...videos].sort(() => Math.random() - 0.5); // Karışık sırala
+        currentItems = allItems;
     }
-    a.appendChild(mediaEl);
-  } else {
-    // video placeholder img (we will replace src with dataURL when IO triggers)
-    mediaEl.src = transparentSVG();
-    a.appendChild(mediaEl);
 
-    // badge (Video / duration)
-    const badge = document.createElement('div');
-    badge.className = 'card__badge';
-    badge.innerHTML = `<span class="dot"></span><span class="badge-text">Video</span>`;
-    a.appendChild(badge);
-  }
-
-  // Click: set hash to open
-  a.addEventListener('click', (e) => {
-    e.preventDefault();
-    location.hash = `#/media/${index}`;
-  });
-
-  // image error -> placeholder behavior
-  mediaEl.addEventListener('error', () => {
-    // file not found: convert to placeholder
-    a.classList.add('placeholder');
-    a.dataset.placeholder = (item.type === 'image') ? '📷 Yakında' : '🎬 Yakında';
-    // remove media src to avoid broken icon
-    mediaEl.remove();
-    // set a min height so grid looks stable; compute row span after
-    a.style.minHeight = '120px';
-    computeRowSpan(a);
-  }, { once:true });
-
-  // when image loads -> compute row span (for masonry)
-  mediaEl.addEventListener('load', () => computeRowSpan(a), { once:true });
-
-  return a;
-}
-
-/* Transparent svg tiny */
-function transparentSVG(){
-  return 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%2272%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23000%22%22 %3E%3C/rect%3E%3C/svg%3E';
-}
-
-/* ---------------------- Render grid & masonry spans ---------------------- */
-function renderGrid(list){
-  gridEl.setAttribute('aria-busy','true');
-  gridEl.innerHTML = '';
-  const frag = document.createDocumentFragment();
-
-  list.forEach((item, idx) => {
-    const card = createCard(item, idx);
-    frag.appendChild(card);
-  });
-
-  gridEl.appendChild(frag);
-  gridEl.setAttribute('aria-busy','false');
-
-  // compute spans after layout
-  idle(() => {
-    const cards = $$('.card', gridEl);
-    cards.forEach(c => computeRowSpan(c));
-  });
-
-  // Setup video thumbnail IO and metadata
-  setupVideoThumbnails(list);
-}
-
-/* grid-row span hesaplama */
-function computeRowSpan(card){
-  const img = card.querySelector('.card__media');
-  if(!img) return;
-  const style = getComputedStyle(gridEl);
-  const rowH = parseFloat(style.getPropertyValue('grid-auto-rows')) || 6;
-  const gap = parseFloat(style.getPropertyValue('gap')) || 12;
-
-  function setSpan(){
-    const height = img.getBoundingClientRect().height;
-    const span = Math.ceil((height + gap) / (rowH + gap));
-    card.style.gridRowEnd = `span ${span}`;
-  }
-
-  if(img.complete && img.naturalHeight !== 0){
-    setSpan();
-  } else {
-    img.addEventListener('load', setSpan, { once:true });
-    img.addEventListener('error', () => {
-      // ensure minimal span
-      card.style.gridRowEnd = `span ${Math.ceil(180 / rowH)}`;
-    }, { once:true });
-  }
-}
-
-/* ---------------------- Video thumbnail / poster generation (IO) ---------------------- */
-function setupVideoThumbnails(list){
-  const videoCards = $$('.card[data-type="video"]', gridEl);
-  if(videoCards.length === 0) return;
-
-  const io = new IntersectionObserver((entries, obs) => {
-    entries.forEach(entry => {
-      if(!entry.isIntersecting) return;
-      const card = entry.target;
-      const idx = Number(card.dataset.index);
-      const item = list[idx];
-      const img = card.querySelector('img.card__media');
-      const badgeText = card.querySelector('.card__badge .badge-text');
-
-      // create off-DOM video
-      const v = document.createElement('video');
-      v.preload = 'auto';
-      v.muted = true;
-      v.playsInline = true;
-      v.src = item.src;
-
-      // When metadata loaded -> duration
-      v.addEventListener('loadedmetadata', () => {
-        item.duration = v.duration;
-        if(badgeText) badgeText.textContent = `Video • ${humanDuration(v.duration)}`;
-      }, { once:true });
-
-      // When data available -> capture frame
-      v.addEventListener('loadeddata', async () => {
-        try{
-          // seek a tiny bit to avoid black frames
-          v.currentTime = Math.min(0.15, (v.duration || 1) * 0.05);
-          await new Promise(res => v.addEventListener('seeked', res, { once:true }));
-
-          const canvas = document.createElement('canvas');
-          canvas.width = v.videoWidth || 640;
-          canvas.height = v.videoHeight || 360;
-          const ctx = canvas.getContext('2d');
-          // draw with cover-like behavior: scale to fit
-          ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
-          const dataURL = canvas.toDataURL('image/jpeg', 0.7);
-
-          // set image src to dataURL
-          if(img) {
-            img.src = dataURL;
-            img.alt = item.id + ' (video poster)';
-            computeRowSpan(card);
-          }
-        }catch(e){
-          // ignore
-        }finally{
-          obs.unobserve(card);
+    // --- GİRİŞ İŞLEMLERİ ---
+    function handleLogin() {
+        if (passwordInput.value === correctPassword) {
+            loginScreen.classList.remove("active-screen");
+            galleryScreen.classList.add("active-screen");
+            loader.classList.add('is-active');
+            setTimeout(() => {
+                generateData();
+                renderGrid(allItems);
+                loader.classList.remove('is-active');
+            }, 500);
+        } else {
+            errorMessage.textContent = "Hatalı şifre! Lütfen tekrar deneyin.";
+            errorMessage.classList.add("show");
+            passwordInput.classList.add("shake");
+            setTimeout(() => {
+                passwordInput.classList.remove("shake");
+                errorMessage.classList.remove("show");
+            }, 500);
         }
-      }, { once:true });
-
-      // trigger load
-      v.load();
-    });
-  }, { rootMargin: '200px 0px' });
-
-  videoCards.forEach(c => io.observe(c));
-}
-
-/* ---------------------- Filter & Search ---------------------- */
-function applyFilters(){
-  const q = currentQuery.trim().toLowerCase();
-  const filtered = media.filter(m => {
-    if(currentFilter !== 'all' && m.type !== currentFilter) return false;
-    if(!q) return true;
-    return m.id.toLowerCase().includes(q) || (m.tags || []).some(t => t.toLowerCase().includes(q));
-  });
-  renderGrid(filtered);
-}
-
-/* filter buttons */
-filterBtns.forEach(btn => {
-  btn.addEventListener('click', () => {
-    filterBtns.forEach(b => { b.classList.remove('is-active'); b.setAttribute('aria-pressed','false'); });
-    btn.classList.add('is-active'); btn.setAttribute('aria-pressed','true');
-    currentFilter = btn.dataset.filter;
-    applyFilters();
-  });
-});
-
-/* search */
-let searchTimer = null;
-searchInput.addEventListener('input', () => {
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => {
-    currentQuery = searchInput.value;
-    applyFilters();
-  }, 180);
-});
-
-/* ---------------------- Lightbox (open/close/nav/hash) ---------------------- */
-function openLightbox(index, pushHash=true){
-  index = clamp(index, 0, media.length-1);
-  currentIndex = index;
-
-  // show loader
-  lbStage.innerHTML = '';
-  lbStage.appendChild(lbLoader);
-  lightbox.classList.remove('is-hidden');
-  lightbox.setAttribute('aria-hidden','false');
-  document.documentElement.style.overflow = 'hidden';
-
-  const item = media[index];
-
-  if(item.type === 'image'){
-    const img = new Image();
-    img.className = 'fade-in';
-    img.alt = item.id;
-    img.decoding = 'async';
-    img.src = item.src;
-    img.addEventListener('load', () => {
-      lbStage.replaceChildren(img);
-      lbTitle.textContent = `Fotoğraf • ${item.id}`;
-      lbMeta.textContent = item.w && item.h ? `${item.w}×${item.h}` : '';
-    }, { once:true });
-    img.addEventListener('error', () => {
-      lbStage.textContent = 'Görüntü yüklenemedi.';
-      lbTitle.textContent = 'Yükleme hatası';
-    }, { once:true });
-  } else {
-    const v = document.createElement('video');
-    v.controls = true;
-    v.autoplay = false; // kullanıcı etkileşimi ile oynatılır (mobil politikalar)
-    v.playsInline = true;
-    v.preload = 'metadata';
-    v.src = item.src;
-    v.addEventListener('loadedmetadata', () => {
-      lbStage.replaceChildren(v);
-      lbTitle.textContent = `Video • ${item.id}`;
-      lbMeta.textContent = item.duration ? humanDuration(item.duration) : '';
-    }, { once:true });
-    v.addEventListener('error', () => {
-      lbStage.textContent = 'Video yüklenemedi.';
-      lbTitle.textContent = 'Yükleme hatası';
-    }, { once:true });
-  }
-
-  if(pushHash){
-    location.hash = `#/media/${index}`;
-  }
-}
-
-function closeLightbox(popHash=true){
-  const v = lbStage.querySelector('video');
-  if(v) try{ v.pause(); } catch(e){}
-  lightbox.classList.add('is-hidden');
-  lightbox.setAttribute('aria-hidden','true');
-  document.documentElement.style.overflow = '';
-  lbStage.innerHTML = '';
-  lbMeta.textContent = '';
-  if(popHash){
-    if(location.hash.startsWith('#/media/')){
-      history.pushState('', document.title, window.location.pathname + window.location.search);
     }
-  }
-}
-function prevItem(){ if(currentIndex>=0) openLightbox((currentIndex-1+media.length)%media.length); }
-function nextItem(){ if(currentIndex>=0) openLightbox((currentIndex+1)%media.length); }
 
-/* lightbox buttons */
-lbClose.addEventListener('click', () => closeLightbox());
-lbPrev.addEventListener('click', prevItem);
-lbNext.addEventListener('click', nextItem);
+    // --- GRID OLUŞTURMA VE YÖNETİMİ ---
+    function renderGrid(items) {
+        grid.innerHTML = "";
+        if (items.length === 0) {
+            resultCount.textContent = "Sonuç bulunamadı.";
+            return;
+        }
 
-/* keyboard */
-document.addEventListener('keydown', (e) => {
-  if(lightbox.classList.contains('is-hidden')) return;
-  if(e.key === 'Escape') closeLightbox();
-  if(e.key === 'ArrowLeft') prevItem();
-  if(e.key === 'ArrowRight') nextItem();
-}, { passive:true });
+        items.forEach((item, index) => {
+            const card = document.createElement("div");
+            card.className = "card";
+            card.dataset.index = items.indexOf(item); // Orijinal dizideki indeksi kullan
 
-/* swipe */
-let touchStartX=0, touchStartY=0, touchLock=false;
-lightbox.addEventListener('touchstart',(e)=>{ const t=e.changedTouches[0]; touchStartX=t.clientX; touchStartY=t.clientY; touchLock=false; }, { passive:true });
-lightbox.addEventListener('touchmove',(e)=>{ const t=e.changedTouches[0]; const dx=t.clientX-touchStartX; const dy=t.clientY-touchStartY; if(!touchLock) touchLock = Math.abs(dx)>Math.abs(dy) && Math.abs(dx)>8; }, { passive:true });
-lightbox.addEventListener('touchend',(e)=>{ if(!touchLock) return; const t=e.changedTouches[0]; const dx=t.clientX-touchStartX; if(dx>50) prevItem(); else if(dx<-50) nextItem(); }, { passive:true });
+            let mediaElement;
+            if (item.type === "photo") {
+                mediaElement = document.createElement("img");
+                mediaElement.src = item.src;
+                mediaElement.alt = item.title;
+                mediaElement.loading = "lazy";
+            } else if (item.type === "video") {
+                mediaElement = document.createElement("video");
+                mediaElement.src = item.src;
+                mediaElement.poster = item.poster;
+                mediaElement.muted = true;
+                mediaElement.loop = true;
+                mediaElement.playsInline = true;
+                
+                const playIcon = document.createElement('div');
+                playIcon.className = 'play-icon';
+                playIcon.innerHTML = '▶';
+                card.appendChild(playIcon);
 
-/* Hash routing */
-function handleHash(){
-  const h = location.hash || '';
-  if(h.startsWith('#/media/')){
-    const idxStr = h.replace('#/media/','').trim();
-    const idx = Number(idxStr);
-    if(Number.isInteger(idx) && idx>=0 && idx<media.length){ openLightbox(idx, false); return; }
-  }
-  // otherwise, close if open
-  if(!lightbox.classList.contains('is-hidden')) closeLightbox(false);
-}
-window.addEventListener('hashchange', handleHash);
+                card.addEventListener('mouseenter', () => mediaElement.play());
+                card.addEventListener('mouseleave', () => mediaElement.pause());
+            }
 
-/* ---------------------- Theme ---------------------- */
-function applyTheme(saved){
-  const light = saved === 'light';
-  document.body.classList.toggle('theme-light', light);
-  document.body.classList.toggle('theme-dark', !light);
-  btnTheme.textContent = light ? '☀️' : '🌙';
-  localStorage.setItem('gallery-theme', light ? 'light' : 'dark');
-}
-btnTheme.addEventListener('click', () => {
-  const nowLight = !document.body.classList.contains('theme-light');
-  applyTheme(nowLight ? 'light' : 'dark');
+            card.appendChild(mediaElement);
+            grid.appendChild(card);
+            
+            // Dinamik grid için yükseklik ayarı
+            if (item.type === 'photo') {
+                mediaElement.onload = () => resizeGridItem(card);
+            } else {
+                 mediaElement.onloadedmetadata = () => resizeGridItem(card);
+            }
+        });
+
+        resultCount.textContent = `${items.length} sonuç bulundu`;
+        currentItems = items;
+    }
+
+    function resizeGridItem(item) {
+        const rowHeight = parseInt(window.getComputedStyle(grid).getPropertyValue('grid-auto-rows'));
+        const rowGap = parseInt(window.getComputedStyle(grid).getPropertyValue('grid-row-gap'));
+        const media = item.querySelector('img') || item.querySelector('video');
+        const contentHeight = media.getBoundingClientRect().height;
+        const rowSpan = Math.ceil((contentHeight + rowGap) / (rowHeight + rowGap));
+        item.style.gridRowEnd = "span " + rowSpan;
+    }
+
+    // --- LIGHTBOX İŞLEMLERİ ---
+    function showLightbox(index) {
+        const item = currentItems[index];
+        lbContent.innerHTML = "";
+        lbCaption.textContent = item.title;
+
+        if (item.type === "photo") {
+            const img = document.createElement("img");
+            img.src = item.src;
+            lbContent.appendChild(img);
+        } else if (item.type === "video") {
+            const vid = document.createElement("video");
+            vid.src = item.src;
+            vid.controls = true;
+            vid.autoplay = true;
+            lbContent.appendChild(vid);
+        }
+        lightbox.classList.add("is-active");
+        currentIndex = index;
+    }
+
+    function closeLightbox() {
+        lightbox.classList.remove("is-active");
+        // Videoyu durdur
+        const video = lbContent.querySelector('video');
+        if (video) video.pause();
+    }
+
+    function showPrev() {
+        currentIndex = (currentIndex - 1 + currentItems.length) % currentItems.length;
+        showLightbox(currentIndex);
+    }
+
+    function showNext() {
+        currentIndex = (currentIndex + 1) % currentItems.length;
+        showLightbox(currentIndex);
+    }
+    
+    // --- FİLTRELEME VE ARAMA ---
+    function applyFilters() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const activeFilter = document.querySelector('.chip.is-active').dataset.filter;
+
+        let filteredItems = allItems;
+
+        if (activeFilter !== 'all') {
+            filteredItems = filteredItems.filter(item => item.type === activeFilter);
+        }
+        
+        if (searchTerm) {
+            filteredItems = filteredItems.filter(item => item.title.toLowerCase().includes(searchTerm));
+        }
+
+        renderGrid(filteredItems);
+    }
+
+    // --- TEMA YÖNETİMİ ---
+    function toggleTheme() {
+        document.body.classList.toggle("theme-light");
+        if (document.body.classList.contains("theme-light")) {
+            themeBtn.textContent = "☀️";
+        } else {
+            themeBtn.textContent = "🌙";
+        }
+    }
+
+    // --- EVENT LISTENERS ---
+    loginBtn.addEventListener("click", handleLogin);
+    passwordInput.addEventListener("keypress", (e) => e.key === "Enter" && handleLogin());
+
+    grid.addEventListener("click", (e) => {
+        const card = e.target.closest(".card");
+        if (card) {
+            const index = currentItems.findIndex(item => item.title === (card.querySelector('img, video').alt || card.querySelector('video').poster.split('/').pop().replace('.jpg', '.mp4')));
+             showLightbox(parseInt(card.dataset.index, 10));
+        }
+    });
+
+    lbClose.addEventListener("click", closeLightbox);
+    lbPrev.addEventListener("click", showPrev);
+    lbNext.addEventListener("click", showNext);
+    lightbox.addEventListener('click', (e) => {
+        if(e.target === lightbox) closeLightbox();
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (!lightbox.classList.contains("is-active")) return;
+        if (e.key === "Escape") closeLightbox();
+        if (e.key === "ArrowLeft") showPrev();
+        if (e.key === "ArrowRight") showNext();
+    });
+
+    lbFullscreen.addEventListener("click", () => {
+        const content = lbContent.firstElementChild;
+        if (content && content.requestFullscreen) {
+            content.requestFullscreen();
+        }
+    });
+
+    chips.forEach(chip => {
+        chip.addEventListener("click", () => {
+            chips.forEach(c => c.classList.remove("is-active"));
+            chip.classList.add("is-active");
+            applyFilters();
+        });
+    });
+
+    searchInput.addEventListener("input", applyFilters);
+    themeBtn.addEventListener("click", toggleTheme);
+
+    scrollTopBtn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+    window.addEventListener("scroll", () => {
+        scrollTopBtn.classList.toggle("show", window.scrollY > 300);
+    });
+
+    window.addEventListener('resize', () => renderGrid(currentItems));
 });
-
-/* ---------------------- About dialog ---------------------- */
-btnAbout.addEventListener('click', ()=> { aboutDialog.classList.remove('is-hidden'); aboutDialog.setAttribute('aria-hidden','false'); document.documentElement.style.overflow='hidden'; });
-aboutClose.addEventListener('click', ()=> { aboutDialog.classList.add('is-hidden'); aboutDialog.setAttribute('aria-hidden','true'); document.documentElement.style.overflow=''; });
-aboutOk.addEventListener('click', ()=> { aboutClose.click(); });
-aboutDialog.addEventListener('click', (e)=> { if(e.target === aboutDialog) aboutClose.click(); });
-
-/* ---------------------- Boot / Init ---------------------- */
-function boot(){
-  // theme from storage
-  const theme = localStorage.getItem('gallery-theme') || 'dark';
-  applyTheme(theme === 'light' ? 'light' : 'dark');
-
-  // initial render (all)
-  currentFilter = 'all';
-  currentQuery = '';
-  applyFilters();
-
-  // on resize -> recompute spans
-  let rid = 0;
-  window.addEventListener('resize', () => {
-    cancelAnimationFrame(rid);
-    rid = raf(()=> $$('.card', gridEl).forEach(c => computeRowSpan(c)));
-  }, { passive:true });
-
-  // handle hash at load
-  handleHash();
-}
-
-/* set initial filter buttons attribute data-filter for script usage */
-filterBtns.forEach(b => {
-  if(!b.dataset.filter) {
-    // ensure dataset.filter exists (chip elements had it in HTML)
-  }
-});
-
-/* kick off when DOM loaded */
-document.addEventListener('DOMContentLoaded', boot);
