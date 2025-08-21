@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profesyonel Galeri</title>
+<link rel="stylesheet" href="css/main.css">
+<script defer src="js/gallery.js"></script>
+</head>
+<body class="theme-dark">
+
+<header class="topbar">
+  <h1 class="brand">📷 Galeri</h1>
+  <div class="controls">
+    <button class="chip is-active" data-filter="all">Hepsi</button>
+    <button class="chip" data-filter="photo">Fotoğraflar</button>
+    <button class="chip" data-filter="video">Videolar</button>
+    <input id="searchInput" type="search" placeholder="Ara...">
+    <span id="resultCount" class="result-count"></span>
+    <button id="btnTheme">🌓</button>
+  </div>
+</header>
+
+<main id="main">
+  <div id="grid" class="grid"></div>
+</main>
+
+<div id="lightbox" class="lightbox is-hidden">
+  <button id="lbClose" class="lb-close">✕</button>
+  <button id="lbFullscreen" class="lb-fullscreen">⛶</button>
+  <button id="lbPrev" class="lb-nav prev">←</button>
+  <button id="lbNext" class="lb-nav next">→</button>
+  <div id="lbContent" class="lb-content"></div>
+</div>
+
+<button id="scrollTopBtn" class="scroll-to-top" title="Yukarı Kaydır">↑</button>
+
+</body>
+</html>
